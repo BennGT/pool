@@ -230,6 +230,11 @@ textarea {
   padding: 9px 11px;
 }
 
+input[readonly] {
+  background: #eef5f2;
+  color: #42504d;
+}
+
 textarea {
   resize: vertical;
   min-height: 98px;
@@ -327,8 +332,23 @@ details {
 }
 
 details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   cursor: pointer;
   margin-bottom: 14px;
+}
+
+details summary strong {
+  color: var(--teal-dark);
+  font-size: 0.83rem;
+  font-weight: 850;
+  text-align: right;
+}
+
+.compact-title {
+  margin-top: 4px;
 }
 
 .results-list {
@@ -412,6 +432,14 @@ details summary {
   line-height: 1.42;
 }
 
+.dose-effect {
+  color: #40504c;
+}
+
+.dose-effect strong {
+  color: #243431;
+}
+
 .dose-alt {
   display: grid;
   gap: 4px;
@@ -484,5 +512,14 @@ details summary {
   .results-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  details summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  details summary strong {
+    text-align: left;
   }
 }

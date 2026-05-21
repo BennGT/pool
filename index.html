@@ -87,8 +87,8 @@
 
             <label class="field chlorine-field">
               <span>Combined chlorine</span>
-              <input id="combinedChlorine" type="number" min="0" step="0.1" inputmode="decimal">
-              <small>ppm</small>
+              <input id="combinedChlorine" type="number" min="0" step="0.1" inputmode="decimal" readonly>
+              <small>auto: total - free</small>
             </label>
 
             <label class="field bromine-field is-hidden">
@@ -129,54 +129,68 @@
           </div>
         </section>
 
-        <section class="panel">
-          <div class="section-title">
-            <h2>Targets</h2>
-            <button id="resetTargets" class="secondary-button" type="button">Use Preset</button>
-          </div>
+        <section class="panel targets-panel">
+          <details id="targetsEditor">
+            <summary>
+              <span>Edit targets</span>
+              <strong id="targetSummary">Victorian commercial defaults</strong>
+            </summary>
 
-          <div class="form-grid targets-grid">
-            <label class="field target-chlorine">
-              <span>Free chlorine target</span>
-              <input id="targetChlorine" type="number" min="0" step="0.1" value="3">
-              <small>ppm</small>
-            </label>
+            <div class="section-title compact-title">
+              <h2>Targets</h2>
+              <button id="resetTargets" class="secondary-button" type="button">Use Victorian preset</button>
+            </div>
 
-            <label class="field target-bromine is-hidden">
-              <span>Bromine target</span>
-              <input id="targetBromine" type="number" min="0" step="0.1" value="4">
-              <small>ppm</small>
-            </label>
+            <div class="form-grid targets-grid">
+              <label class="field target-chlorine">
+                <span>Free chlorine target</span>
+                <input id="targetChlorine" type="number" min="0" step="0.1" value="1.5">
+                <small>Vic min 1.0 ppm; outdoor with CYA min 2.0 ppm</small>
+              </label>
 
-            <label class="field">
-              <span>pH target</span>
-              <input id="targetPh" type="number" min="0" max="14" step="0.1" value="7.5">
-            </label>
+              <label class="field target-combined">
+                <span>Combined chlorine action</span>
+                <input id="targetCombined" type="number" min="0" step="0.1" value="1">
+                <small>Vic max 1.0 ppm; ideal under 0.2 ppm</small>
+              </label>
 
-            <label class="field full-test">
-              <span>Alkalinity target</span>
-              <input id="targetAlkalinity" type="number" min="0" step="1" value="90">
-              <small>ppm</small>
-            </label>
+              <label class="field target-bromine is-hidden">
+                <span>Bromine target</span>
+                <input id="targetBromine" type="number" min="0" step="0.1" value="4">
+                <small>Vic range 2-8 ppm; spa min 6 ppm</small>
+              </label>
 
-            <label class="field full-test">
-              <span>Hardness target</span>
-              <input id="targetCalcium" type="number" min="0" step="1" value="250">
-              <small>ppm</small>
-            </label>
+              <label class="field">
+                <span>pH target</span>
+                <input id="targetPh" type="number" min="0" max="14" step="0.1" value="7.5">
+                <small id="targetPhHelp">Vic chlorine range 7.2-7.8</small>
+              </label>
 
-            <label class="field full-test target-cya">
-              <span>CYA target</span>
-              <input id="targetCya" type="number" min="0" step="1" value="40">
-              <small>ppm</small>
-            </label>
+              <label class="field full-test">
+                <span>Alkalinity target</span>
+                <input id="targetAlkalinity" type="number" min="0" step="1" value="100">
+                <small>Vic range 60-200 ppm</small>
+              </label>
 
-            <label class="field full-test target-salt">
-              <span>Salt target</span>
-              <input id="targetSalt" type="number" min="0" step="10" value="4000">
-              <small>ppm</small>
-            </label>
-          </div>
+              <label class="field full-test">
+                <span>Hardness target</span>
+                <input id="targetCalcium" type="number" min="0" step="1" value="250">
+                <small>Used for water balance/LSI</small>
+              </label>
+
+              <label class="field full-test target-cya">
+                <span>CYA target</span>
+                <input id="targetCya" type="number" min="0" step="1" value="30">
+                <small>Vic outdoor max 100 ppm; ideal 30 ppm or less</small>
+              </label>
+
+              <label class="field full-test target-salt">
+                <span>Salt target</span>
+                <input id="targetSalt" type="number" min="0" step="10" value="4000">
+                <small>Set to chlorinator manual</small>
+              </label>
+            </div>
+          </details>
         </section>
 
         <section class="panel">

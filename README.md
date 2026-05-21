@@ -10,7 +10,10 @@ Open `index.html` in a browser. No install step is required.
 - Basic test set: free chlorine, total chlorine, combined chlorine, and pH.
 - Full test set: adds total alkalinity, calcium hardness, stabilizer/CYA, and salt in ppm.
 - Paste parsing for Spin Disk-style result text.
-- Editable product strengths and target levels.
+- Combined chlorine is automatically calculated as `total chlorine - free chlorine`.
+- Editable product strengths and target levels, saved in the browser for later use.
+- Collapsed target editor with Victorian public aquatic facility defaults.
+- Dose cards explain what each chemical does to the water.
 
 ## Calculation notes
 
@@ -22,6 +25,19 @@ The app uses local formulas rather than an external dosing API. Chlorine, bromin
 - Salt, CYA, calcium chloride, and sodium bicarbonate doses scale from ppm rise and pool volume.
 
 pH and alkalinity acid doses are practical approximations because real acid demand changes with alkalinity, borates, temperature, dissolved solids, and product composition. The app deliberately phrases large TA reductions as staged acid/aeration work rather than a single dump-in dose.
+
+## Victorian defaults
+
+Targets are editable, but the preset is based on Victorian Government public aquatic facility guidance:
+
+- Free chlorine defaults to 1.5 ppm for non-stabilised chlorine pools, above the 1.0 ppm minimum.
+- Salt/outdoor chlorine defaults to 2.0 ppm free chlorine, matching the minimum where cyanuric acid is used.
+- Combined chlorine action level defaults to 1.0 ppm, with an ideal note of less than 0.2 ppm.
+- pH defaults to 7.5 for chlorine pools inside the 7.2-7.8 range, and 7.6 for bromine pools inside the 7.2-8.0 range.
+- Bromine defaults to 4.0 ppm inside the 2-8 ppm range.
+- CYA defaults to 30 ppm for the salt/outdoor profile because the Victorian guide says outdoor pools should ideally be 30 ppm or less and must not exceed 100 ppm.
+
+Salt target is still editable because salt chlorinator manufacturers set their own operating range.
 
 ## API finding
 

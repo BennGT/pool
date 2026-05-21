@@ -2,23 +2,23 @@
 
 const profiles = {
   chlorine: {
-    label: "Chlorine profile",
-    targets: { chlorine: 3, ph: 7.5, alkalinity: 90, calcium: 250, cya: 40, salt: 0, bromine: 4 },
-    ranges: { sanitizer: "2-4 ppm", ph: "7.2-7.8" }
+    label: "Victorian chlorine profile",
+    targets: { chlorine: 1.5, combined: 1, ph: 7.5, alkalinity: 100, calcium: 250, cya: 0, salt: 0, bromine: 4 },
+    ranges: { sanitizer: "min 1.0 ppm", ph: "7.2-7.8", cya: "none indoors" }
   },
   salt: {
-    label: "Salt chlorinated profile",
-    targets: { chlorine: 4, ph: 7.5, alkalinity: 80, calcium: 250, cya: 70, salt: 4000, bromine: 4 },
-    ranges: { sanitizer: "3-5 ppm", ph: "7.2-7.8" }
+    label: "Victorian outdoor salt profile",
+    targets: { chlorine: 2, combined: 1, ph: 7.5, alkalinity: 100, calcium: 250, cya: 30, salt: 4000, bromine: 4 },
+    ranges: { sanitizer: "min 2.0 ppm with CYA", ph: "7.2-7.8", cya: "ideal <= 30 ppm" }
   },
   bromine: {
-    label: "Bromine profile",
-    targets: { chlorine: 3, ph: 7.5, alkalinity: 100, calcium: 250, cya: 0, salt: 0, bromine: 4 },
-    ranges: { sanitizer: "3-5 ppm", ph: "7.2-7.8" }
+    label: "Victorian bromine profile",
+    targets: { chlorine: 1.5, combined: 1, ph: 7.6, alkalinity: 100, calcium: 250, cya: 0, salt: 0, bromine: 4 },
+    ranges: { sanitizer: "2-8 ppm", ph: "7.2-8.0", cya: "no benefit" }
   }
 };
 
-const storageKey = "pool-dose-calculator-v1";
+const storageKey = "pool-dose-calculator-v2";
 
 const ids = [
   "poolVolume",
@@ -33,6 +33,7 @@ const ids = [
   "cya",
   "salt",
   "targetChlorine",
+  "targetCombined",
   "targetBromine",
   "targetPh",
   "targetAlkalinity",
@@ -67,6 +68,26 @@ function positiveNumber(id, fallback) {
 
 function setValue(id, value) {
   $(id).value = value === null || value === undefined ? "" : String(value);
+}
+
+function syncCombinedChlorine() {
+  if (selected("sanitizer") === "bromine") return null;
+
+  const free = numberValue("freeChlorine");
+  const total = numberValue("totalChlorine");
+
+  if (free !== null && total !== null) {
+    const combined = Math.max(total - free, 0);
+    setValue("combinedChlorine", combined.toFixed(1));
+    return combined;
+  }
+
+  if (free !== null || total !== null) {
+    setValue("combinedChlorine", "");
+    return null;
+  }
+
+  return numberValue("combinedChlorine");
 }
 
 function poolVolumeLitres() {
@@ -164,6 +185,7 @@ function clamp(value, min, max) {
 function setTargetsFromProfile() {
   const profile = profiles[selected("sanitizer")];
   setValue("targetChlorine", profile.targets.chlorine);
+  setValue("targetCombined", profile.targets.combined);
   setValue("targetBromine", profile.targets.bromine);
   setValue("targetPh", profile.targets.ph);
   setValue("targetAlkalinity", profile.targets.alkalinity);
@@ -181,16 +203,22 @@ function updateVisibility() {
   const isBromine = sanitizer === "bromine";
   const isFull = testSet === "full";
   const isSalt = sanitizer === "salt";
+  const targetSummary = sanitizer === "bromine"
+    ? `Bromine ${formatNumber(positiveNumber("targetBromine", profiles.bromine.targets.bromine), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", profiles.bromine.targets.ph), 1)}`
+    : `Free chlorine ${formatNumber(positiveNumber("targetChlorine", profiles[sanitizer].targets.chlorine), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", profiles[sanitizer].targets.ph), 1)}`;
 
   all(".chlorine-field").forEach((node) => node.classList.toggle("is-hidden", isBromine));
   all(".bromine-field").forEach((node) => node.classList.toggle("is-hidden", !isBromine));
   all(".target-chlorine").forEach((node) => node.classList.toggle("is-hidden", isBromine));
+  all(".target-combined").forEach((node) => node.classList.toggle("is-hidden", isBromine));
   all(".target-bromine").forEach((node) => node.classList.toggle("is-hidden", !isBromine));
   all(".full-test").forEach((node) => node.classList.toggle("is-hidden", !isFull));
   all(".target-cya").forEach((node) => node.classList.toggle("is-hidden", !isFull || isBromine));
   all(".target-salt").forEach((node) => node.classList.toggle("is-hidden", !isFull || !isSalt));
 
   $("profileHint").textContent = profiles[sanitizer].label;
+  $("targetSummary").textContent = targetSummary;
+  $("targetPhHelp").textContent = sanitizer === "bromine" ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
 }
 
 function saveState() {
@@ -266,8 +294,8 @@ function parseReport() {
 
   const free = numberValue("freeChlorine");
   const total = numberValue("totalChlorine");
-  if (numberValue("combinedChlorine") === null && free !== null && total !== null) {
-    setValue("combinedChlorine", Math.max(total - free, 0).toFixed(1));
+  if (free !== null && total !== null) {
+    syncCombinedChlorine();
     count += 1;
   }
 
@@ -296,12 +324,14 @@ function hasAnyReading() {
 
 function calculate() {
   updateVisibility();
+  syncCombinedChlorine();
   const volume = poolVolumeLitres();
   $("volumeReadout").textContent = `${formatNumber(volume, 0)} L pool`;
 
   if (!volume || volume <= 0 || !hasAnyReading()) {
     renderCards([]);
     setStatus("Ready");
+    saveState();
     return;
   }
 
@@ -347,12 +377,10 @@ function calculate() {
 function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   const free = numberValue("freeChlorine");
   const total = numberValue("totalChlorine");
-  let combined = numberValue("combinedChlorine");
+  let combined = syncCombinedChlorine();
   const target = positiveNumber("targetChlorine", profiles[selected("sanitizer")].targets.chlorine);
-
-  if (combined === null && free !== null && total !== null) {
-    combined = Math.max(total - free, 0);
-  }
+  const combinedAction = positiveNumber("targetCombined", profiles[selected("sanitizer")].targets.combined);
+  const combinedIdeal = 0.2;
 
   if (free !== null) {
     if (free < target - 0.1) {
@@ -365,6 +393,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
         amount: formatVolume(liquidMl),
         chemical: `${formatNumber(liquidStrength, 1)}% liquid chlorine`,
         body: `Raises free chlorine by about ${formatNumber(delta, 1)} ppm to ${formatNumber(target, 1)} ppm.`,
+        effect: "Raises the active sanitiser residual. Liquid chlorine can also slowly add salt and nudge pH upward.",
         alt: [`Alternative: ${formatMass(granularGrams)} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
       });
     } else if (free > target + 1.5) {
@@ -373,12 +402,24 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
         badge: "watch",
         amount: "Hold",
         chemical: "chlorine dosing",
-        body: `Current free chlorine is ${formatNumber(free, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm before adding more.`
+        body: `Current free chlorine is ${formatNumber(free, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm before adding more.`,
+        effect: "Holding chlorine dosing lets the sanitiser residual reduce through normal demand, sunlight and circulation."
       });
     }
   }
 
-  if (combined !== null && combined > 0.5) {
+  if (total !== null && total > 10) {
+    cards.push({
+      title: "Total chlorine above Victorian max",
+      badge: "stop",
+      amount: "Hold",
+      chemical: "chlorine dosing",
+      body: `Victorian guidance lists total chlorine max 10 ppm. Current total chlorine is ${formatNumber(total, 1)} ppm.`,
+      effect: "Do not add more chlorinating product while total chlorine is above the operating limit."
+    });
+  }
+
+  if (combined !== null && combined > combinedAction) {
     const shockDelta = combined * 10;
     const liquidMl = ppmDose(volume, shockDelta, liquidStrength);
     const granularGrams = ppmDose(volume, shockDelta, granularStrength);
@@ -387,8 +428,18 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
       badge: "dose",
       amount: formatVolume(liquidMl),
       chemical: `${formatNumber(liquidStrength, 1)}% liquid chlorine`,
-      body: `Breakpoint estimate for ${formatNumber(combined, 1)} ppm combined chlorine. Balance pH first and retest after circulation.`,
+      body: `Breakpoint estimate for ${formatNumber(combined, 1)} ppm combined chlorine. Victorian max is ${formatNumber(combinedAction, 1)} ppm and ideal is under ${formatNumber(combinedIdeal, 1)} ppm.`,
+      effect: "Oxidises chloramines, which are used-up chlorine compounds that can cause odour, eye irritation and poor disinfection.",
       alt: [`Alternative: ${formatMass(granularGrams)} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
+    });
+  } else if (combined !== null && combined > combinedIdeal) {
+    cards.push({
+      title: "Combined chlorine above ideal",
+      badge: "watch",
+      amount: `${formatNumber(combined, 1)} ppm`,
+      chemical: "combined chlorine",
+      body: `Victorian guidance says combined chlorine should ideally be under ${formatNumber(combinedIdeal, 1)} ppm and must be less than free chlorine.`,
+      effect: "Combined chlorine is chlorine that has reacted with contaminants; improved oxidation, ventilation, dilution or UV can reduce it."
     });
   }
 }
@@ -408,7 +459,8 @@ function calculateBromine(cards, volume) {
       badge: "dose",
       amount: formatMass(grams),
       chemical: `${formatNumber(strength, 1)}% bromine granules`,
-      body: `Raises total bromine by about ${formatNumber(delta, 1)} ppm to ${formatNumber(target, 1)} ppm.`
+      body: `Raises total bromine by about ${formatNumber(delta, 1)} ppm to ${formatNumber(target, 1)} ppm.`,
+      effect: "Raises the bromine sanitiser residual so the water can keep disinfecting between bather loads."
     });
   } else if (bromine > target + 2) {
     cards.push({
@@ -416,7 +468,8 @@ function calculateBromine(cards, volume) {
       badge: "watch",
       amount: "Hold",
       chemical: "bromine dosing",
-      body: `Current bromine is ${formatNumber(bromine, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm.`
+      body: `Current bromine is ${formatNumber(bromine, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm.`,
+      effect: "Holding bromine dosing lets the residual reduce through normal demand and dilution."
     });
   }
 }
@@ -438,6 +491,7 @@ function calculatePh(cards, volume, alkalinity, muriaticStrength) {
       amount: formatMass(dryAcid),
       chemical: "dry acid",
       body: `Estimated drop from pH ${formatNumber(ph, 1)} to ${formatNumber(target, 1)}.${splitNote}`,
+      effect: "Lowers pH and also lowers total alkalinity a little.",
       alt: [`Alternative: ${formatVolume(muriatic)} of ${formatNumber(muriaticStrength, 1)}% muriatic acid.`]
     });
   } else if (ph < target - 0.05) {
@@ -448,7 +502,8 @@ function calculatePh(cards, volume, alkalinity, muriaticStrength) {
       badge: "dose",
       amount: formatMass(sodaAsh),
       chemical: "soda ash",
-      body: `Estimated rise from pH ${formatNumber(ph, 1)} to ${formatNumber(target, 1)}.`
+      body: `Estimated rise from pH ${formatNumber(ph, 1)} to ${formatNumber(target, 1)}.`,
+      effect: "Raises pH and can also lift total alkalinity."
     });
   }
 }
@@ -466,7 +521,8 @@ function calculateAlkalinity(cards, volume, muriaticStrength) {
       badge: "dose",
       amount: formatMass(bicarbForAlkalinity(volume, delta)),
       chemical: "sodium bicarbonate",
-      body: `Raises total alkalinity by about ${formatNumber(delta, 0)} ppm.`
+      body: `Raises total alkalinity by about ${formatNumber(delta, 0)} ppm.`,
+      effect: "Increases alkalinity, which buffers pH and makes pH changes less sudden."
     });
   } else if (current > target + 15) {
     const delta = current - target;
@@ -476,6 +532,7 @@ function calculateAlkalinity(cards, volume, muriaticStrength) {
       amount: formatVolume(acidForAlkalinity(volume, delta, muriaticStrength)),
       chemical: "muriatic acid total",
       body: "Use staged acid and aeration cycles; this is not a single-dose instruction.",
+      effect: "Lowers total alkalinity and pH; aeration raises pH back up without restoring alkalinity.",
       alt: [`Dry acid equivalent: ${formatMass(dryAcidForAlkalinity(volume, delta))}.`]
     });
   }
@@ -495,7 +552,8 @@ function calculateCalcium(cards, volume) {
       badge: "dose",
       amount: formatMass(calciumChlorideForHardness(volume, delta, purity)),
       chemical: `${formatNumber(purity, 1)}% calcium chloride`,
-      body: `Raises calcium hardness by about ${formatNumber(delta, 0)} ppm.`
+      body: `Raises calcium hardness by about ${formatNumber(delta, 0)} ppm.`,
+      effect: "Increases calcium hardness, which helps protect plaster/concrete surfaces from aggressive water."
     });
   } else if (current > target + 100) {
     const fraction = replacementFraction(current, target);
@@ -504,7 +562,8 @@ function calculateCalcium(cards, volume) {
       badge: "watch",
       amount: `${formatNumber(fraction * 100, 0)}%`,
       chemical: "water replacement",
-      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}. Check source-water hardness first.`
+      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}. Check source-water hardness first.`,
+      effect: "Dilutes calcium hardness; chemical additions cannot directly remove calcium from pool water."
     });
   }
 }
@@ -523,7 +582,8 @@ function calculateCya(cards, volume, sanitizer) {
       badge: "dose",
       amount: formatMass(stabilizerDose(volume, delta, purity)),
       chemical: `${formatNumber(purity, 1)}% cyanuric acid`,
-      body: `Raises stabilizer by about ${formatNumber(delta, 0)} ppm. Add slowly through the skimmer or sock method per label.`
+      body: `Raises stabilizer by about ${formatNumber(delta, 0)} ppm. Add slowly through the skimmer or sock method per label.`,
+      effect: "Increases CYA, which protects chlorine from sunlight but makes high chlorine levels less effective."
     });
   } else if (current > target + 20) {
     const fraction = replacementFraction(current, target);
@@ -532,7 +592,8 @@ function calculateCya(cards, volume, sanitizer) {
       badge: "watch",
       amount: `${formatNumber(fraction * 100, 0)}%`,
       chemical: "water replacement",
-      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`
+      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`,
+      effect: "Dilutes stabilizer; CYA does not evaporate and usually only drops through water replacement or splash-out."
     });
   }
 }
@@ -550,7 +611,8 @@ function calculateSalt(cards, volume, sanitizer) {
       badge: "dose",
       amount: formatMass(saltDose(volume, delta)),
       chemical: "pool salt",
-      body: `Raises salt by about ${formatNumber(delta, 0)} ppm. Match the chlorinator manual when it differs from this target.`
+      body: `Raises salt by about ${formatNumber(delta, 0)} ppm. Match the chlorinator manual when it differs from this target.`,
+      effect: "Increases salinity so the salt chlorinator can generate chlorine correctly."
     });
   } else if (current > target + 500) {
     const fraction = replacementFraction(current, target);
@@ -559,7 +621,8 @@ function calculateSalt(cards, volume, sanitizer) {
       badge: "watch",
       amount: `${formatNumber(fraction * 100, 0)}%`,
       chemical: "water replacement",
-      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`
+      body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`,
+      effect: "Dilutes salinity; salt cannot be chemically removed from the water."
     });
   }
 }
@@ -602,6 +665,15 @@ function renderCards(cards) {
     body.textContent = card.body;
 
     article.append(header, main, body);
+
+    if (card.effect) {
+      const effect = document.createElement("p");
+      effect.className = "dose-effect";
+      const label = document.createElement("strong");
+      label.textContent = "Effect: ";
+      effect.append(label, document.createTextNode(card.effect));
+      article.append(effect);
+    }
 
     if (card.alt && card.alt.length) {
       const alt = document.createElement("div");
