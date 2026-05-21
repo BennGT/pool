@@ -17,10 +17,10 @@ const poolDefaults = {
   },
   "indoor-swimming": {
     name: "Indoor Swimming Pool",
-    volume: 50000,
+    volume: 150000,
     sanitizer: "chlorine",
     allowCya: false,
-    note: "Indoor pool: cyanuric acid is hidden. Update the volume when known."
+    note: "Indoor pool: cyanuric acid is hidden."
   }
 };
 
@@ -83,7 +83,7 @@ function makeDefaultProfileSettings() {
   return Object.fromEntries(
     Object.entries(poolDefaults).map(([key, profile]) => [
       key,
-      { volume: profile.volume, sanitizer: profile.sanitizer }
+      { sanitizer: profile.sanitizer }
     ])
   );
 }
@@ -285,17 +285,16 @@ function setTargetsFromProfile() {
 function savePoolSettings(key = currentPoolKey()) {
   if (!poolDefaults[key]) return;
   profileSettings[key] = {
-    volume: positiveNumber("poolVolume", poolDefaults[key].volume),
     sanitizer: selected("sanitizer")
   };
 }
 
 function applyPoolProfile(key = currentPoolKey()) {
   const settings = profileSettings[key] || {
-    volume: poolDefaults[key].volume,
     sanitizer: poolDefaults[key].sanitizer
   };
-  setValue("poolVolume", settings.volume);
+  setValue("poolVolume", poolDefaults[key].volume);
+  setValue("volumeUnit", "litres");
   setRadio("sanitizer", settings.sanitizer);
   lastPoolKey = key;
   updateVisibility();
@@ -334,6 +333,24 @@ function updateVisibility() {
   $("targetChlorineHelp").textContent = cyaAllowed || isSalt ? "Vic min 2.0 ppm where CYA is used" : "Vic min 1.0 ppm without CYA";
   $("targetCyaHelp").textContent = cyaAllowed ? "Vic outdoor max 100 ppm; ideal 30 ppm or less" : "Indoor pools do not use CYA";
   $("chemicalSummary").textContent = `${formatNumber(positiveNumber("muriaticStrength", 31.45), 1)}% hydrochloric acid, ${formatNumber(positiveNumber("calciumPurity", 77), 1)}% calcium chloride`;
+  fitSegmentLabels();
+}
+
+function fitSegmentLabels() {
+  if (typeof window === "undefined" || !window.getComputedStyle) return;
+
+  all(".segmented span").forEach((label) => {
+    if (!label.clientWidth) return;
+
+    label.style.fontSize = "";
+    const baseSize = parseFloat(window.getComputedStyle(label).fontSize);
+    let nextSize = baseSize;
+
+    while (label.scrollWidth > label.clientWidth && nextSize > 10) {
+      nextSize -= 0.5;
+      label.style.fontSize = `${nextSize}px`;
+    }
+  });
 }
 
 function saveState() {
@@ -376,6 +393,7 @@ function loadState() {
     Object.entries(state.values || {}).forEach(([id, value]) => {
       if (!$(id)) return;
       if (id === "poolVolume") return;
+      if (id === "volumeUnit") return;
       setValue(id, value);
     });
   } catch {
@@ -885,6 +903,8 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeDrawer();
   });
+
+  window.addEventListener("resize", fitSegmentLabels);
 }
 
 bindEvents();

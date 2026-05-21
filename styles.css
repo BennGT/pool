@@ -382,6 +382,13 @@ input[readonly] {
   color: #42504d;
 }
 
+select[disabled] {
+  background: #eef5f2;
+  color: #42504d;
+  opacity: 1;
+  cursor: default;
+}
+
 textarea {
   resize: vertical;
   min-height: 98px;
@@ -438,6 +445,8 @@ textarea:focus {
   color: #34413e;
   font-size: 0.86rem;
   font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
   text-align: center;
 }
 

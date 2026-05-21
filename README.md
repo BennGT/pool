@@ -7,7 +7,7 @@ Open `index.html` in a browser. No install step is required.
 ## What it handles
 
 - Sanitiser profiles: chlorine, salt chlorinated, and bromine.
-- Pool profiles: Chiller, Indoor Plunge, and Indoor Swimming Pool.
+- Fixed pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, and Indoor Swimming Pool 150,000 L.
 - Daily test set: free chlorine, total chlorine, combined chlorine, and pH.
 - Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, and salt for salt pools.
 - Combined chlorine is automatically calculated as `total chlorine - free chlorine`.

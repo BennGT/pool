@@ -71,13 +71,13 @@
                 <label class="field">
                   <span>Pool volume</span>
                   <div class="inline-input">
-                    <input id="poolVolume" type="number" min="0" step="100" value="7500" inputmode="decimal">
-                    <select id="volumeUnit" aria-label="Pool volume unit">
+                    <input id="poolVolume" type="number" min="0" step="100" value="7500" inputmode="decimal" readonly>
+                    <select id="volumeUnit" aria-label="Pool volume unit" disabled>
                       <option value="litres">L</option>
                       <option value="gallons">US gal</option>
                     </select>
                   </div>
-                  <small>Saved per pool profile</small>
+                  <small>Fixed profile volume</small>
                 </label>
 
                 <fieldset class="segmented" aria-label="Sanitiser type">
