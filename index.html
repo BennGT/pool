@@ -9,143 +9,199 @@
   </head>
   <body>
     <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
+      <div class="brand-row">
+        <button id="menuToggle" class="icon-button" type="button" aria-label="Open menu" aria-expanded="false">
           <span></span>
           <span></span>
           <span></span>
-        </div>
-        <div>
-          <h1>Pool Dose Calculator</h1>
-          <p>Spin Disk readings to chemical doses</p>
+        </button>
+
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <h1>Pool Dose Calculator</h1>
+            <p>Daily and weekly commercial pool dosing</p>
+          </div>
         </div>
       </div>
+
       <div class="top-actions">
         <span id="statusPill" class="status-pill">Ready</span>
         <button id="resetApp" class="ghost-button" type="button">Reset</button>
       </div>
     </header>
 
-    <main class="layout">
-      <section class="workbench" aria-label="Pool chemistry inputs">
-        <section class="panel">
-          <div class="section-title">
-            <h2>Pool Setup</h2>
-            <span id="profileHint">Chlorine profile</span>
-          </div>
+    <div id="drawerOverlay" class="drawer-overlay" hidden></div>
+    <nav id="appDrawer" class="app-drawer" aria-label="Main menu" aria-hidden="true">
+      <div class="drawer-head">
+        <strong>Menu</strong>
+        <button id="drawerClose" class="icon-close" type="button" aria-label="Close menu"></button>
+      </div>
+      <button class="drawer-link is-active" type="button" data-nav-page="calculator">Calculator</button>
+      <button class="drawer-link" type="button" data-nav-page="targets">Edit targets</button>
+      <button class="drawer-link" type="button" data-nav-page="chemicals">Edit chemicals</button>
+      <button class="drawer-link" type="button" data-nav-page="reference">Reference</button>
+    </nav>
 
-          <div class="form-grid setup-grid">
-            <label class="field">
-              <span>Pool volume</span>
-              <div class="inline-input">
-                <input id="poolVolume" type="number" min="0" step="1000" value="50000" inputmode="decimal">
-                <select id="volumeUnit" aria-label="Pool volume unit">
-                  <option value="litres">L</option>
-                  <option value="gallons">US gal</option>
-                </select>
+    <main class="app-shell">
+      <section id="page-calculator" class="app-page is-active" data-page-panel="calculator">
+        <div class="layout">
+          <section class="workbench" aria-label="Pool chemistry inputs">
+            <section class="panel">
+              <div class="section-title">
+                <h2>Pool Setup</h2>
+                <span id="profileHint">Victorian chlorine profile</span>
               </div>
-            </label>
 
-            <fieldset class="segmented" aria-label="Sanitiser type">
-              <legend>Sanitiser</legend>
-              <label><input type="radio" name="sanitizer" value="chlorine" checked><span>Chlorine</span></label>
-              <label><input type="radio" name="sanitizer" value="salt"><span>Salt chlorinated</span></label>
-              <label><input type="radio" name="sanitizer" value="bromine"><span>Bromine</span></label>
-            </fieldset>
+              <div class="form-grid setup-grid">
+                <label class="field">
+                  <span>Pool profile</span>
+                  <select id="poolProfile">
+                    <option value="chiller">Chiller</option>
+                    <option value="indoor-plunge">Indoor Plunge</option>
+                    <option value="indoor-swimming">Indoor Swimming Pool</option>
+                  </select>
+                  <small id="poolProfileNote">CYA available if selected</small>
+                </label>
 
-            <fieldset class="segmented" aria-label="Test set">
-              <legend>Test set</legend>
-              <label><input type="radio" name="testSet" value="basic" checked><span>Basic</span></label>
-              <label><input type="radio" name="testSet" value="full"><span>7 test</span></label>
-            </fieldset>
-          </div>
-        </section>
+                <label class="field">
+                  <span>Pool volume</span>
+                  <div class="inline-input">
+                    <input id="poolVolume" type="number" min="0" step="100" value="7500" inputmode="decimal">
+                    <select id="volumeUnit" aria-label="Pool volume unit">
+                      <option value="litres">L</option>
+                      <option value="gallons">US gal</option>
+                    </select>
+                  </div>
+                  <small>Saved per pool profile</small>
+                </label>
 
-        <section class="panel">
-          <div class="section-title">
-            <h2>Spin Disk Results</h2>
-            <button id="parseReport" class="secondary-button" type="button">Parse Paste</button>
-          </div>
+                <fieldset class="segmented" aria-label="Sanitiser type">
+                  <legend>Sanitiser</legend>
+                  <label><input type="radio" name="sanitizer" value="chlorine" checked><span>Chlorine</span></label>
+                  <label><input type="radio" name="sanitizer" value="salt"><span>Salt</span></label>
+                  <label><input type="radio" name="sanitizer" value="bromine"><span>Bromine</span></label>
+                </fieldset>
 
-          <label class="field">
-            <span>Paste report text</span>
-            <textarea id="reportPaste" rows="4" placeholder="Free Chlorine 1.2 ppm&#10;Total Chlorine 1.8 ppm&#10;pH 7.8&#10;Alkalinity 90 ppm"></textarea>
-          </label>
+                <fieldset class="segmented" aria-label="Test set">
+                  <legend>Test set</legend>
+                  <label><input type="radio" name="testSet" value="basic" checked><span>Daily</span></label>
+                  <label><input type="radio" name="testSet" value="full"><span>Weekly</span></label>
+                </fieldset>
+              </div>
+            </section>
 
-          <div id="readingsGrid" class="form-grid readings-grid">
-            <label class="field chlorine-field">
-              <span>Free chlorine</span>
-              <input id="freeChlorine" type="number" min="0" step="0.1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+            <section class="panel">
+              <div class="section-title">
+                <h2>Test Results</h2>
+                <span id="testSetHint">Daily test</span>
+              </div>
 
-            <label class="field chlorine-field">
-              <span>Total chlorine</span>
-              <input id="totalChlorine" type="number" min="0" step="0.1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+              <div id="readingsGrid" class="form-grid readings-grid">
+                <label class="field chlorine-field">
+                  <span>Free chlorine</span>
+                  <input id="freeChlorine" type="number" min="0" step="0.1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-            <label class="field chlorine-field">
-              <span>Combined chlorine</span>
-              <input id="combinedChlorine" type="number" min="0" step="0.1" inputmode="decimal" readonly>
-              <small>auto: total - free</small>
-            </label>
+                <label class="field chlorine-field">
+                  <span>Total chlorine</span>
+                  <input id="totalChlorine" type="number" min="0" step="0.1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-            <label class="field bromine-field is-hidden">
-              <span>Total bromine</span>
-              <input id="bromine" type="number" min="0" step="0.1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+                <label class="field chlorine-field">
+                  <span>Combined chlorine</span>
+                  <input id="combinedChlorine" type="number" min="0" step="0.1" inputmode="decimal" readonly>
+                  <small>auto: total - free</small>
+                </label>
 
-            <label class="field">
-              <span>pH</span>
-              <input id="ph" type="number" min="0" max="14" step="0.1" inputmode="decimal">
-              <small>target range</small>
-            </label>
+                <label class="field bromine-field is-hidden">
+                  <span>Total bromine</span>
+                  <input id="bromine" type="number" min="0" step="0.1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-            <label class="field full-test">
-              <span>Total alkalinity</span>
-              <input id="alkalinity" type="number" min="0" step="1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+                <label class="field">
+                  <span>pH</span>
+                  <input id="ph" type="number" min="0" max="14" step="0.1" inputmode="decimal">
+                  <small id="phReadingHelp">Vic chlorine range 7.2-7.8</small>
+                </label>
 
-            <label class="field full-test">
-              <span>Calcium hardness</span>
-              <input id="calcium" type="number" min="0" step="1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+                <label class="field full-test">
+                  <span>Total alkalinity</span>
+                  <input id="alkalinity" type="number" min="0" step="1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-            <label class="field full-test">
-              <span>Stabilizer / CYA</span>
-              <input id="cya" type="number" min="0" step="1" inputmode="decimal">
-              <small>ppm</small>
-            </label>
+                <label class="field full-test">
+                  <span>Calcium hardness</span>
+                  <input id="calcium" type="number" min="0" step="1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-            <label class="field full-test salt-field">
-              <span>Salt</span>
-              <input id="salt" type="number" min="0" step="10" inputmode="decimal">
-              <small>ppm</small>
-            </label>
-          </div>
-        </section>
+                <label class="field full-test cya-field">
+                  <span>Stabiliser / CYA</span>
+                  <input id="cya" type="number" min="0" step="1" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
 
-        <section class="panel targets-panel">
-          <details id="targetsEditor">
-            <summary>
-              <span>Edit targets</span>
-              <strong id="targetSummary">Victorian commercial defaults</strong>
-            </summary>
+                <label class="field full-test salt-field">
+                  <span>Salt</span>
+                  <input id="salt" type="number" min="0" step="10" inputmode="decimal">
+                  <small>ppm</small>
+                </label>
+              </div>
+            </section>
+          </section>
 
-            <div class="section-title compact-title">
-              <h2>Targets</h2>
-              <button id="resetTargets" class="secondary-button" type="button">Use Victorian preset</button>
+          <aside class="results-panel" aria-label="Dose results">
+            <div class="results-head">
+              <div>
+                <h2>Doses</h2>
+                <p id="volumeReadout">7,500 L pool</p>
+              </div>
+              <button id="calculateNow" class="primary-button" type="button">Calculate</button>
+            </div>
+
+            <div id="results" class="results-list">
+              <article class="empty-state">
+                <strong>Enter readings</strong>
+                <span>Doses appear as soon as there is enough data.</span>
+              </article>
+            </div>
+
+            <div class="reference-box">
+              <strong>Working note</strong>
+              <span>Estimates use saved product strengths. Label directions, equipment manuals, and local rules take priority.</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="page-targets" class="app-page" data-page-panel="targets">
+        <div class="single-page">
+          <section class="panel">
+            <div class="section-title">
+              <div>
+                <h2>Edit Targets</h2>
+                <span id="targetSummary">Victorian commercial defaults</span>
+              </div>
+              <div class="button-row">
+                <button id="resetTargets" class="secondary-button" type="button">Use Victorian preset</button>
+                <button id="saveTargets" class="primary-button" type="button">Save targets</button>
+              </div>
             </div>
 
             <div class="form-grid targets-grid">
               <label class="field target-chlorine">
                 <span>Free chlorine target</span>
                 <input id="targetChlorine" type="number" min="0" step="0.1" value="1.5">
-                <small>Vic min 1.0 ppm; outdoor with CYA min 2.0 ppm</small>
+                <small id="targetChlorineHelp">Vic min 1.0 ppm; outdoor with CYA min 2.0 ppm</small>
               </label>
 
               <label class="field target-combined">
@@ -166,36 +222,52 @@
                 <small id="targetPhHelp">Vic chlorine range 7.2-7.8</small>
               </label>
 
-              <label class="field full-test">
+              <label class="field">
                 <span>Alkalinity target</span>
                 <input id="targetAlkalinity" type="number" min="0" step="1" value="100">
                 <small>Vic range 60-200 ppm</small>
               </label>
 
-              <label class="field full-test">
+              <label class="field">
                 <span>Hardness target</span>
                 <input id="targetCalcium" type="number" min="0" step="1" value="250">
-                <small>Used for water balance/LSI</small>
+                <small>Vic uses LSI: keep -0.5 to +0.5. Example balance uses calcium hardness 250 ppm.</small>
               </label>
 
-              <label class="field full-test target-cya">
-                <span>CYA target</span>
+              <label class="field target-cya">
+                <span>Stabiliser target</span>
                 <input id="targetCya" type="number" min="0" step="1" value="30">
-                <small>Vic outdoor max 100 ppm; ideal 30 ppm or less</small>
+                <small id="targetCyaHelp">Vic outdoor max 100 ppm; ideal 30 ppm or less</small>
               </label>
 
-              <label class="field full-test target-salt">
+              <label class="field target-salt">
                 <span>Salt target</span>
                 <input id="targetSalt" type="number" min="0" step="10" value="4000">
                 <small>Set to chlorinator manual</small>
               </label>
             </div>
-          </details>
-        </section>
+          </section>
+        </div>
+      </section>
 
-        <section class="panel">
-          <details open>
-            <summary>Chemicals</summary>
+      <section id="page-chemicals" class="app-page" data-page-panel="chemicals">
+        <div class="single-page">
+          <section class="panel">
+            <div class="section-title">
+              <div>
+                <h2>Edit Chemicals</h2>
+                <span id="chemicalSummary">Using saved chemical strengths</span>
+              </div>
+              <button id="saveChemicals" class="primary-button" type="button">Save chemicals</button>
+            </div>
+
+            <div class="chemical-name-grid">
+              <div><strong>Hardness</strong><span>Calcium chloride</span></div>
+              <div><strong>pH up</strong><span>Sodium bicarbonate</span></div>
+              <div><strong>pH down</strong><span>Hydrochloric acid or dry acid</span></div>
+              <div><strong>Stabiliser</strong><span>Cyanuric acid</span></div>
+            </div>
+
             <div class="form-grid chemicals-grid">
               <label class="field">
                 <span>Liquid chlorine</span>
@@ -210,7 +282,7 @@
               </label>
 
               <label class="field">
-                <span>Muriatic acid</span>
+                <span>Hydrochloric acid</span>
                 <input id="muriaticStrength" type="number" min="1" max="40" step="0.1" value="31.45">
                 <small>% hydrochloric acid</small>
               </label>
@@ -222,42 +294,50 @@
               </label>
 
               <label class="field">
-                <span>Calcium increaser</span>
+                <span>Calcium chloride</span>
                 <input id="calciumPurity" type="number" min="1" max="100" step="0.1" value="77">
                 <small>% calcium chloride</small>
               </label>
 
               <label class="field">
-                <span>Stabilizer</span>
+                <span>Stabiliser</span>
                 <input id="stabilizerPurity" type="number" min="1" max="100" step="0.1" value="100">
                 <small>% cyanuric acid</small>
               </label>
             </div>
-          </details>
-        </section>
+          </section>
+        </div>
       </section>
 
-      <aside class="results-panel" aria-label="Dose results">
-        <div class="results-head">
-          <div>
-            <h2>Doses</h2>
-            <p id="volumeReadout">50,000 L pool</p>
-          </div>
-          <button id="calculateNow" class="primary-button" type="button">Calculate</button>
-        </div>
+      <section id="page-reference" class="app-page" data-page-panel="reference">
+        <div class="single-page">
+          <section class="panel">
+            <div class="section-title">
+              <h2>Reference</h2>
+              <span>Victorian public aquatic facility guide</span>
+            </div>
 
-        <div id="results" class="results-list">
-          <article class="empty-state">
-            <strong>Enter readings</strong>
-            <span>Doses appear as soon as there is enough data.</span>
-          </article>
+            <div class="notes-grid">
+              <article>
+                <strong>Daily</strong>
+                <span>Free chlorine, total chlorine, combined chlorine and pH.</span>
+              </article>
+              <article>
+                <strong>Weekly</strong>
+                <span>Add alkalinity, calcium hardness, stabiliser if used, and salt for salt pools.</span>
+              </article>
+              <article>
+                <strong>Indoor CYA</strong>
+                <span>Indoor Plunge and Indoor Swimming Pool do not use cyanuric acid, so stabiliser fields stay hidden.</span>
+              </article>
+              <article>
+                <strong>Hardness</strong>
+                <span>Victoria manages hardness as part of LSI water balance rather than a single standalone range.</span>
+              </article>
+            </div>
+          </section>
         </div>
-
-        <div class="reference-box">
-          <strong>Working note</strong>
-          <span>Estimates use editable product strengths. Label directions, equipment manuals, and local rules take priority.</span>
-        </div>
-      </aside>
+      </section>
     </main>
   </body>
 </html>

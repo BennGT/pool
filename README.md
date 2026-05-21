@@ -7,12 +7,12 @@ Open `index.html` in a browser. No install step is required.
 ## What it handles
 
 - Sanitiser profiles: chlorine, salt chlorinated, and bromine.
-- Basic test set: free chlorine, total chlorine, combined chlorine, and pH.
-- Full test set: adds total alkalinity, calcium hardness, stabilizer/CYA, and salt in ppm.
-- Paste parsing for Spin Disk-style result text.
+- Pool profiles: Chiller, Indoor Plunge, and Indoor Swimming Pool.
+- Daily test set: free chlorine, total chlorine, combined chlorine, and pH.
+- Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, and salt for salt pools.
 - Combined chlorine is automatically calculated as `total chlorine - free chlorine`.
 - Editable product strengths and target levels, saved in the browser for later use.
-- Collapsed target editor with Victorian public aquatic facility defaults.
+- Hamburger menu access to calculator, targets, chemicals, and reference notes.
 - Dose cards explain what each chemical does to the water.
 
 ## Calculation notes
@@ -35,7 +35,8 @@ Targets are editable, but the preset is based on Victorian Government public aqu
 - Combined chlorine action level defaults to 1.0 ppm, with an ideal note of less than 0.2 ppm.
 - pH defaults to 7.5 for chlorine pools inside the 7.2-7.8 range, and 7.6 for bromine pools inside the 7.2-8.0 range.
 - Bromine defaults to 4.0 ppm inside the 2-8 ppm range.
-- CYA defaults to 30 ppm for the salt/outdoor profile because the Victorian guide says outdoor pools should ideally be 30 ppm or less and must not exceed 100 ppm.
+- CYA defaults to 30 ppm only where the active pool profile allows stabiliser. Indoor Plunge and Indoor Swimming Pool hide CYA because the Victorian guide says cyanuric acid should not be used in indoor pools.
+- Calcium hardness is handled as part of LSI water balance. The Victorian guide states LSI should be between -0.5 and +0.5 and gives an example of ideal balance at pH 7.4, total alkalinity 100 ppm, calcium hardness 250 ppm, and 29 C.
 
 Salt target is still editable because salt chlorinator manufacturers set their own operating range.
 

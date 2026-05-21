@@ -1,26 +1,38 @@
 "use strict";
 
-const profiles = {
-  chlorine: {
-    label: "Victorian chlorine profile",
-    targets: { chlorine: 1.5, combined: 1, ph: 7.5, alkalinity: 100, calcium: 250, cya: 0, salt: 0, bromine: 4 },
-    ranges: { sanitizer: "min 1.0 ppm", ph: "7.2-7.8", cya: "none indoors" }
+const poolDefaults = {
+  chiller: {
+    name: "Chiller",
+    volume: 7500,
+    sanitizer: "chlorine",
+    allowCya: true,
+    note: "Stabiliser can be used if this pool is operated outdoors."
   },
-  salt: {
-    label: "Victorian outdoor salt profile",
-    targets: { chlorine: 2, combined: 1, ph: 7.5, alkalinity: 100, calcium: 250, cya: 30, salt: 4000, bromine: 4 },
-    ranges: { sanitizer: "min 2.0 ppm with CYA", ph: "7.2-7.8", cya: "ideal <= 30 ppm" }
+  "indoor-plunge": {
+    name: "Indoor Plunge",
+    volume: 4500,
+    sanitizer: "chlorine",
+    allowCya: false,
+    note: "Indoor pool: cyanuric acid is hidden."
   },
-  bromine: {
-    label: "Victorian bromine profile",
-    targets: { chlorine: 1.5, combined: 1, ph: 7.6, alkalinity: 100, calcium: 250, cya: 0, salt: 0, bromine: 4 },
-    ranges: { sanitizer: "2-8 ppm", ph: "7.2-8.0", cya: "no benefit" }
+  "indoor-swimming": {
+    name: "Indoor Swimming Pool",
+    volume: 50000,
+    sanitizer: "chlorine",
+    allowCya: false,
+    note: "Indoor pool: cyanuric acid is hidden. Update the volume when known."
   }
 };
 
-const storageKey = "pool-dose-calculator-v2";
+const sanitizerLabels = {
+  chlorine: "Victorian chlorine profile",
+  salt: "Victorian salt profile",
+  bromine: "Victorian bromine profile"
+};
 
-const ids = [
+const storageKey = "pool-dose-calculator-v3";
+
+const valueIds = [
   "poolVolume",
   "volumeUnit",
   "freeChlorine",
@@ -45,15 +57,44 @@ const ids = [
   "muriaticStrength",
   "bromineStrength",
   "calciumPurity",
-  "stabilizerPurity",
-  "reportPaste"
+  "stabilizerPurity"
 ];
+
+const readingIds = [
+  "freeChlorine",
+  "totalChlorine",
+  "combinedChlorine",
+  "bromine",
+  "ph",
+  "alkalinity",
+  "calcium",
+  "cya",
+  "salt"
+];
+
+let profileSettings = makeDefaultProfileSettings();
+let lastPoolKey = "chiller";
+let drawerTouchStartX = null;
 
 const $ = (id) => document.getElementById(id);
 const all = (selector) => Array.from(document.querySelectorAll(selector));
 
+function makeDefaultProfileSettings() {
+  return Object.fromEntries(
+    Object.entries(poolDefaults).map(([key, profile]) => [
+      key,
+      { volume: profile.volume, sanitizer: profile.sanitizer }
+    ])
+  );
+}
+
 function selected(name) {
   return document.querySelector(`input[name="${name}"]:checked`).value;
+}
+
+function setRadio(name, value) {
+  const input = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (input) input.checked = true;
 }
 
 function numberValue(id) {
@@ -70,6 +111,22 @@ function setValue(id, value) {
   $(id).value = value === null || value === undefined ? "" : String(value);
 }
 
+function currentPoolKey() {
+  return $("poolProfile").value;
+}
+
+function currentPool() {
+  return poolDefaults[currentPoolKey()];
+}
+
+function activePoolAllowsCya() {
+  return Boolean(currentPool().allowCya && selected("sanitizer") !== "bromine");
+}
+
+function isSaltPool() {
+  return selected("sanitizer") === "salt";
+}
+
 function syncCombinedChlorine() {
   if (selected("sanitizer") === "bromine") return null;
 
@@ -84,10 +141,9 @@ function syncCombinedChlorine() {
 
   if (free !== null || total !== null) {
     setValue("combinedChlorine", "");
-    return null;
   }
 
-  return numberValue("combinedChlorine");
+  return null;
 }
 
 function poolVolumeLitres() {
@@ -138,14 +194,14 @@ function dryAcidForPh(volumeLitres, phDrop, alkalinity) {
   return 30 * (volumeLitres / 10000) * (phDrop / 0.1) * alkFactor;
 }
 
-function muriaticForPh(volumeLitres, phDrop, alkalinity, strength) {
+function hydrochloricForPh(volumeLitres, phDrop, alkalinity, strength) {
   const alkFactor = clamp((alkalinity || 90) / 90, 0.75, 1.6);
   const standardStrength = 31.45;
   return 473 * (volumeLitres / 37854) * (phDrop / 0.2) * alkFactor * (standardStrength / strength);
 }
 
-function sodaAshForPh(volumeLitres, phRise) {
-  return 22.5 * (volumeLitres / 10000) * (phRise / 0.1);
+function sodiumBicarbForPh(volumeLitres, phRise) {
+  return 45 * (volumeLitres / 10000) * (phRise / 0.1);
 }
 
 function bicarbForAlkalinity(volumeLitres, ppmDelta) {
@@ -182,19 +238,68 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function currentDefaultTargets() {
+  const sanitizer = selected("sanitizer");
+  const cyaAllowed = activePoolAllowsCya();
+
+  if (sanitizer === "bromine") {
+    return {
+      chlorine: 1.5,
+      combined: 1,
+      bromine: 4,
+      ph: 7.6,
+      alkalinity: 100,
+      calcium: 250,
+      cya: 0,
+      salt: 0
+    };
+  }
+
+  return {
+    chlorine: sanitizer === "salt" || cyaAllowed ? 2 : 1.5,
+    combined: 1,
+    bromine: 4,
+    ph: 7.5,
+    alkalinity: 100,
+    calcium: 250,
+    cya: cyaAllowed ? 30 : 0,
+    salt: sanitizer === "salt" ? 4000 : 0
+  };
+}
+
 function setTargetsFromProfile() {
-  const profile = profiles[selected("sanitizer")];
-  setValue("targetChlorine", profile.targets.chlorine);
-  setValue("targetCombined", profile.targets.combined);
-  setValue("targetBromine", profile.targets.bromine);
-  setValue("targetPh", profile.targets.ph);
-  setValue("targetAlkalinity", profile.targets.alkalinity);
-  setValue("targetCalcium", profile.targets.calcium);
-  setValue("targetCya", profile.targets.cya);
-  setValue("targetSalt", profile.targets.salt);
+  const targets = currentDefaultTargets();
+  setValue("targetChlorine", targets.chlorine);
+  setValue("targetCombined", targets.combined);
+  setValue("targetBromine", targets.bromine);
+  setValue("targetPh", targets.ph);
+  setValue("targetAlkalinity", targets.alkalinity);
+  setValue("targetCalcium", targets.calcium);
+  setValue("targetCya", targets.cya);
+  setValue("targetSalt", targets.salt);
   updateVisibility();
   saveState();
   calculate();
+}
+
+function savePoolSettings(key = currentPoolKey()) {
+  if (!poolDefaults[key]) return;
+  profileSettings[key] = {
+    volume: positiveNumber("poolVolume", poolDefaults[key].volume),
+    sanitizer: selected("sanitizer")
+  };
+}
+
+function applyPoolProfile(key = currentPoolKey()) {
+  const settings = profileSettings[key] || {
+    volume: poolDefaults[key].volume,
+    sanitizer: poolDefaults[key].sanitizer
+  };
+  setValue("poolVolume", settings.volume);
+  setRadio("sanitizer", settings.sanitizer);
+  lastPoolKey = key;
+  updateVisibility();
+  setTargetsFromProfile();
 }
 
 function updateVisibility() {
@@ -202,10 +307,12 @@ function updateVisibility() {
   const testSet = selected("testSet");
   const isBromine = sanitizer === "bromine";
   const isFull = testSet === "full";
-  const isSalt = sanitizer === "salt";
-  const targetSummary = sanitizer === "bromine"
-    ? `Bromine ${formatNumber(positiveNumber("targetBromine", profiles.bromine.targets.bromine), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", profiles.bromine.targets.ph), 1)}`
-    : `Free chlorine ${formatNumber(positiveNumber("targetChlorine", profiles[sanitizer].targets.chlorine), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", profiles[sanitizer].targets.ph), 1)}`;
+  const isSalt = isSaltPool();
+  const cyaAllowed = activePoolAllowsCya();
+  const pool = currentPool();
+  const targetSummary = isBromine
+    ? `${pool.name}: bromine ${formatNumber(positiveNumber("targetBromine", 4), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", 7.6), 1)}`
+    : `${pool.name}: free chlorine ${formatNumber(positiveNumber("targetChlorine", 1.5), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", 7.5), 1)}`;
 
   all(".chlorine-field").forEach((node) => node.classList.toggle("is-hidden", isBromine));
   all(".bromine-field").forEach((node) => node.classList.toggle("is-hidden", !isBromine));
@@ -213,23 +320,33 @@ function updateVisibility() {
   all(".target-combined").forEach((node) => node.classList.toggle("is-hidden", isBromine));
   all(".target-bromine").forEach((node) => node.classList.toggle("is-hidden", !isBromine));
   all(".full-test").forEach((node) => node.classList.toggle("is-hidden", !isFull));
-  all(".target-cya").forEach((node) => node.classList.toggle("is-hidden", !isFull || isBromine));
-  all(".target-salt").forEach((node) => node.classList.toggle("is-hidden", !isFull || !isSalt));
+  all(".cya-field").forEach((node) => node.classList.toggle("is-hidden", !isFull || !cyaAllowed));
+  all(".target-cya").forEach((node) => node.classList.toggle("is-hidden", !cyaAllowed));
+  all(".salt-field").forEach((node) => node.classList.toggle("is-hidden", !isFull || !isSalt));
+  all(".target-salt").forEach((node) => node.classList.toggle("is-hidden", !isSalt));
 
-  $("profileHint").textContent = profiles[sanitizer].label;
+  $("profileHint").textContent = `${pool.name} - ${sanitizerLabels[sanitizer]}`;
+  $("poolProfileNote").textContent = pool.note;
+  $("testSetHint").textContent = testSet === "full" ? "Weekly test" : "Daily test";
   $("targetSummary").textContent = targetSummary;
-  $("targetPhHelp").textContent = sanitizer === "bromine" ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
+  $("phReadingHelp").textContent = isBromine ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
+  $("targetPhHelp").textContent = isBromine ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
+  $("targetChlorineHelp").textContent = cyaAllowed || isSalt ? "Vic min 2.0 ppm where CYA is used" : "Vic min 1.0 ppm without CYA";
+  $("targetCyaHelp").textContent = cyaAllowed ? "Vic outdoor max 100 ppm; ideal 30 ppm or less" : "Indoor pools do not use CYA";
+  $("chemicalSummary").textContent = `${formatNumber(positiveNumber("muriaticStrength", 31.45), 1)}% hydrochloric acid, ${formatNumber(positiveNumber("calciumPurity", 77), 1)}% calcium chloride`;
 }
 
 function saveState() {
+  savePoolSettings();
   const state = {
-    sanitizer: selected("sanitizer"),
+    activePool: currentPoolKey(),
     testSet: selected("testSet"),
+    profileSettings,
     values: {}
   };
 
-  ids.forEach((id) => {
-    state.values[id] = $(id).value;
+  valueIds.forEach((id) => {
+    if ($(id)) state.values[id] = $(id).value;
   });
 
   localStorage.setItem(storageKey, JSON.stringify(state));
@@ -237,70 +354,38 @@ function saveState() {
 
 function loadState() {
   const raw = localStorage.getItem(storageKey);
+
   if (!raw) {
-    updateVisibility();
+    setValue("poolProfile", "chiller");
+    applyPoolProfile("chiller");
     calculate();
     return;
   }
 
   try {
     const state = JSON.parse(raw);
-    if (state.sanitizer) {
-      const sanitizerInput = document.querySelector(`input[name="sanitizer"][value="${state.sanitizer}"]`);
-      if (sanitizerInput) sanitizerInput.checked = true;
-    }
-    if (state.testSet) {
-      const testInput = document.querySelector(`input[name="testSet"][value="${state.testSet}"]`);
-      if (testInput) testInput.checked = true;
-    }
+    profileSettings = {
+      ...makeDefaultProfileSettings(),
+      ...(state.profileSettings || {})
+    };
+
+    setValue("poolProfile", state.activePool || "chiller");
+    if (state.testSet) setRadio("testSet", state.testSet);
+    applyPoolProfile(currentPoolKey());
+
     Object.entries(state.values || {}).forEach(([id, value]) => {
-      if ($(id)) $(id).value = value;
+      if (!$(id)) return;
+      if (id === "poolVolume") return;
+      setValue(id, value);
     });
   } catch {
     localStorage.removeItem(storageKey);
+    profileSettings = makeDefaultProfileSettings();
+    setValue("poolProfile", "chiller");
+    applyPoolProfile("chiller");
   }
 
   updateVisibility();
-  calculate();
-}
-
-function parseReport() {
-  const text = $("reportPaste").value;
-  if (!text.trim()) {
-    setStatus("Paste empty");
-    return;
-  }
-
-  const patterns = [
-    ["freeChlorine", /\b(?:free\s*(?:chlorine|cl)|fc)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["totalChlorine", /\b(?:total\s*(?:chlorine|cl)|tc)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["combinedChlorine", /\b(?:combined\s*(?:chlorine|cl)|cc)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["bromine", /\b(?:total\s*bromine|bromine|br)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["ph", /\bpH\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["alkalinity", /\b(?:total\s*alkalinity|alkalinity|alk|ta)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["calcium", /\b(?:calcium\s*hardness|hardness|calcium|ch)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["cya", /\b(?:cyanuric\s*acid|stabili[sz]er|cya)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i],
-    ["salt", /\b(?:salt|salinity|nacl)\b[^0-9.-]*(-?\d+(?:\.\d+)?)/i]
-  ];
-
-  let count = 0;
-  patterns.forEach(([id, pattern]) => {
-    const match = text.match(pattern);
-    if (match && $(id)) {
-      setValue(id, match[1]);
-      count += 1;
-    }
-  });
-
-  const free = numberValue("freeChlorine");
-  const total = numberValue("totalChlorine");
-  if (free !== null && total !== null) {
-    syncCombinedChlorine();
-    count += 1;
-  }
-
-  setStatus(count ? `${count} readings parsed` : "No readings found");
-  saveState();
   calculate();
 }
 
@@ -309,24 +394,15 @@ function setStatus(text) {
 }
 
 function hasAnyReading() {
-  return [
-    "freeChlorine",
-    "totalChlorine",
-    "combinedChlorine",
-    "bromine",
-    "ph",
-    "alkalinity",
-    "calcium",
-    "cya",
-    "salt"
-  ].some((id) => numberValue(id) !== null);
+  return readingIds.some((id) => numberValue(id) !== null);
 }
 
 function calculate() {
   updateVisibility();
   syncCombinedChlorine();
+
   const volume = poolVolumeLitres();
-  $("volumeReadout").textContent = `${formatNumber(volume, 0)} L pool`;
+  $("volumeReadout").textContent = `${formatNumber(volume, 0)} L - ${currentPool().name}`;
 
   if (!volume || volume <= 0 || !hasAnyReading()) {
     renderCards([]);
@@ -341,7 +417,7 @@ function calculate() {
   const alkalinity = numberValue("alkalinity");
   const liquidStrength = positiveNumber("liquidChlorineStrength", 12.5);
   const granularStrength = positiveNumber("granularChlorineStrength", 65);
-  const muriaticStrength = positiveNumber("muriaticStrength", 31.45);
+  const hydrochloricStrength = positiveNumber("muriaticStrength", 31.45);
 
   if (sanitizer === "bromine") {
     calculateBromine(cards, volume);
@@ -349,10 +425,10 @@ function calculate() {
     calculateChlorine(cards, volume, liquidStrength, granularStrength);
   }
 
-  calculatePh(cards, volume, alkalinity, muriaticStrength);
+  calculatePh(cards, volume, alkalinity, hydrochloricStrength);
 
   if (testSet === "full") {
-    calculateAlkalinity(cards, volume, muriaticStrength);
+    calculateAlkalinity(cards, volume, hydrochloricStrength);
     calculateCalcium(cards, volume);
     calculateCya(cards, volume, sanitizer);
     calculateSalt(cards, volume, sanitizer);
@@ -363,8 +439,9 @@ function calculate() {
       title: "No dose needed",
       badge: "ok",
       amount: "Balanced",
-      chemical: "for the entered targets",
-      body: "Keep circulating and retest on the normal schedule."
+      chemical: "for the saved targets",
+      body: "Keep circulating and retest on the normal schedule.",
+      effect: "No chemical change is recommended from the readings entered."
     });
   }
 
@@ -377,9 +454,9 @@ function calculate() {
 function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   const free = numberValue("freeChlorine");
   const total = numberValue("totalChlorine");
-  let combined = syncCombinedChlorine();
-  const target = positiveNumber("targetChlorine", profiles[selected("sanitizer")].targets.chlorine);
-  const combinedAction = positiveNumber("targetCombined", profiles[selected("sanitizer")].targets.combined);
+  const combined = syncCombinedChlorine();
+  const target = positiveNumber("targetChlorine", currentDefaultTargets().chlorine);
+  const combinedAction = positiveNumber("targetCombined", 1);
   const combinedIdeal = 0.2;
 
   if (free !== null) {
@@ -446,7 +523,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
 
 function calculateBromine(cards, volume) {
   const bromine = numberValue("bromine");
-  const target = positiveNumber("targetBromine", profiles.bromine.targets.bromine);
+  const target = positiveNumber("targetBromine", 4);
   const strength = positiveNumber("bromineStrength", 61);
 
   if (bromine === null) return;
@@ -474,43 +551,43 @@ function calculateBromine(cards, volume) {
   }
 }
 
-function calculatePh(cards, volume, alkalinity, muriaticStrength) {
+function calculatePh(cards, volume, alkalinity, hydrochloricStrength) {
   const ph = numberValue("ph");
-  const target = positiveNumber("targetPh", 7.5);
+  const target = positiveNumber("targetPh", selected("sanitizer") === "bromine" ? 7.6 : 7.5);
 
   if (ph === null) return;
 
   if (ph > target + 0.05) {
     const drop = ph - target;
     const dryAcid = dryAcidForPh(volume, drop, alkalinity);
-    const muriatic = muriaticForPh(volume, drop, alkalinity, muriaticStrength);
+    const hydrochloric = hydrochloricForPh(volume, drop, alkalinity, hydrochloricStrength);
     const splitNote = drop > 0.4 ? " Split the dose and retest between additions." : "";
     cards.push({
       title: "Lower pH",
       badge: "dose",
-      amount: formatMass(dryAcid),
-      chemical: "dry acid",
+      amount: formatVolume(hydrochloric),
+      chemical: `${formatNumber(hydrochloricStrength, 1)}% hydrochloric acid`,
       body: `Estimated drop from pH ${formatNumber(ph, 1)} to ${formatNumber(target, 1)}.${splitNote}`,
       effect: "Lowers pH and also lowers total alkalinity a little.",
-      alt: [`Alternative: ${formatVolume(muriatic)} of ${formatNumber(muriaticStrength, 1)}% muriatic acid.`]
+      alt: [`Dry acid option: ${formatMass(dryAcid)}.`]
     });
   } else if (ph < target - 0.05) {
     const rise = target - ph;
-    const sodaAsh = sodaAshForPh(volume, rise);
+    const sodiumBicarb = sodiumBicarbForPh(volume, rise);
     cards.push({
       title: "Raise pH",
       badge: "dose",
-      amount: formatMass(sodaAsh),
-      chemical: "soda ash",
-      body: `Estimated rise from pH ${formatNumber(ph, 1)} to ${formatNumber(target, 1)}.`,
-      effect: "Raises pH and can also lift total alkalinity."
+      amount: formatMass(sodiumBicarb),
+      chemical: "sodium bicarbonate",
+      body: `Estimated slow pH lift from ${formatNumber(ph, 1)} toward ${formatNumber(target, 1)}. Retest after circulation.`,
+      effect: "Raises pH slowly and increases total alkalinity."
     });
   }
 }
 
-function calculateAlkalinity(cards, volume, muriaticStrength) {
+function calculateAlkalinity(cards, volume, hydrochloricStrength) {
   const current = numberValue("alkalinity");
-  const target = positiveNumber("targetAlkalinity", 90);
+  const target = positiveNumber("targetAlkalinity", 100);
 
   if (current === null) return;
 
@@ -529,8 +606,8 @@ function calculateAlkalinity(cards, volume, muriaticStrength) {
     cards.push({
       title: "Lower alkalinity",
       badge: "watch",
-      amount: formatVolume(acidForAlkalinity(volume, delta, muriaticStrength)),
-      chemical: "muriatic acid total",
+      amount: formatVolume(acidForAlkalinity(volume, delta, hydrochloricStrength)),
+      chemical: "hydrochloric acid total",
       body: "Use staged acid and aeration cycles; this is not a single-dose instruction.",
       effect: "Lowers total alkalinity and pH; aeration raises pH back up without restoring alkalinity.",
       alt: [`Dry acid equivalent: ${formatMass(dryAcidForAlkalinity(volume, delta))}.`]
@@ -553,7 +630,7 @@ function calculateCalcium(cards, volume) {
       amount: formatMass(calciumChlorideForHardness(volume, delta, purity)),
       chemical: `${formatNumber(purity, 1)}% calcium chloride`,
       body: `Raises calcium hardness by about ${formatNumber(delta, 0)} ppm.`,
-      effect: "Increases calcium hardness, which helps protect plaster/concrete surfaces from aggressive water."
+      effect: "Increases calcium hardness, which helps protect concrete surfaces and tile grout from aggressive water."
     });
   } else if (current > target + 100) {
     const fraction = replacementFraction(current, target);
@@ -570,30 +647,30 @@ function calculateCalcium(cards, volume) {
 
 function calculateCya(cards, volume, sanitizer) {
   const current = numberValue("cya");
-  if (current === null || sanitizer === "bromine") return;
+  if (current === null || sanitizer === "bromine" || !activePoolAllowsCya()) return;
 
-  const target = positiveNumber("targetCya", profiles[sanitizer].targets.cya);
+  const target = positiveNumber("targetCya", 30);
   const purity = positiveNumber("stabilizerPurity", 100);
 
   if (current < target - 5) {
     const delta = target - current;
     cards.push({
-      title: "Raise stabilizer",
+      title: "Raise stabiliser",
       badge: "dose",
       amount: formatMass(stabilizerDose(volume, delta, purity)),
-      chemical: `${formatNumber(purity, 1)}% cyanuric acid`,
-      body: `Raises stabilizer by about ${formatNumber(delta, 0)} ppm. Add slowly through the skimmer or sock method per label.`,
-      effect: "Increases CYA, which protects chlorine from sunlight but makes high chlorine levels less effective."
+      chemical: `${formatNumber(purity, 1)}% stabiliser`,
+      body: `Raises cyanuric acid by about ${formatNumber(delta, 0)} ppm.`,
+      effect: "Increases stabiliser, which protects chlorine from sunlight but makes high chlorine levels less effective."
     });
   } else if (current > target + 20) {
     const fraction = replacementFraction(current, target);
     cards.push({
-      title: "Stabilizer is high",
+      title: "Stabiliser is high",
       badge: "watch",
       amount: `${formatNumber(fraction * 100, 0)}%`,
       chemical: "water replacement",
       body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`,
-      effect: "Dilutes stabilizer; CYA does not evaporate and usually only drops through water replacement or splash-out."
+      effect: "Dilutes stabiliser; CYA does not evaporate and usually only drops through water replacement or splash-out."
     });
   }
 }
@@ -602,7 +679,7 @@ function calculateSalt(cards, volume, sanitizer) {
   const current = numberValue("salt");
   if (current === null || sanitizer !== "salt") return;
 
-  const target = positiveNumber("targetSalt", profiles.salt.targets.salt);
+  const target = positiveNumber("targetSalt", 4000);
 
   if (current < target - 100) {
     const delta = target - current;
@@ -663,7 +740,6 @@ function renderCards(cards) {
 
     const body = document.createElement("p");
     body.textContent = card.body;
-
     article.append(header, main, body);
 
     if (card.effect) {
@@ -690,34 +766,80 @@ function renderCards(cards) {
   });
 }
 
+function showPage(page) {
+  all("[data-page-panel]").forEach((panel) => {
+    panel.classList.toggle("is-active", panel.dataset.pagePanel === page);
+  });
+  all("[data-nav-page]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.navPage === page);
+  });
+  closeDrawer();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openDrawer() {
+  $("appDrawer").classList.add("is-open");
+  $("appDrawer").setAttribute("aria-hidden", "false");
+  $("drawerOverlay").hidden = false;
+  $("menuToggle").setAttribute("aria-expanded", "true");
+}
+
+function closeDrawer() {
+  $("appDrawer").classList.remove("is-open");
+  $("appDrawer").setAttribute("aria-hidden", "true");
+  $("drawerOverlay").hidden = true;
+  $("menuToggle").setAttribute("aria-expanded", "false");
+}
+
 function resetApp() {
   localStorage.removeItem(storageKey);
-  ids.forEach((id) => {
-    if (id === "poolVolume") setValue(id, "50000");
+  profileSettings = makeDefaultProfileSettings();
+  valueIds.forEach((id) => {
+    if (id === "poolVolume") setValue(id, "7500");
     else if (id === "volumeUnit") setValue(id, "litres");
+    else if (id === "targetChlorine") setValue(id, "1.5");
+    else if (id === "targetCombined") setValue(id, "1");
+    else if (id === "targetBromine") setValue(id, "4");
+    else if (id === "targetPh") setValue(id, "7.5");
+    else if (id === "targetAlkalinity") setValue(id, "100");
+    else if (id === "targetCalcium") setValue(id, "250");
+    else if (id === "targetCya") setValue(id, "30");
+    else if (id === "targetSalt") setValue(id, "4000");
     else if (id === "liquidChlorineStrength") setValue(id, "12.5");
     else if (id === "granularChlorineStrength") setValue(id, "65");
     else if (id === "muriaticStrength") setValue(id, "31.45");
     else if (id === "bromineStrength") setValue(id, "61");
     else if (id === "calciumPurity") setValue(id, "77");
     else if (id === "stabilizerPurity") setValue(id, "100");
-    else if (id !== "reportPaste") setValue(id, "");
     else setValue(id, "");
   });
-  document.querySelector('input[name="sanitizer"][value="chlorine"]').checked = true;
-  document.querySelector('input[name="testSet"][value="basic"]').checked = true;
-  setTargetsFromProfile();
+  setValue("poolProfile", "chiller");
+  setRadio("sanitizer", "chlorine");
+  setRadio("testSet", "basic");
+  applyPoolProfile("chiller");
+  showPage("calculator");
   setStatus("Reset");
 }
 
 function bindEvents() {
-  ids.forEach((id) => {
+  valueIds.forEach((id) => {
+    if (!$(id)) return;
     $(id).addEventListener("input", calculate);
     $(id).addEventListener("change", calculate);
   });
 
+  $("poolProfile").addEventListener("change", () => {
+    savePoolSettings(lastPoolKey);
+    applyPoolProfile(currentPoolKey());
+    saveState();
+    calculate();
+  });
+
   all('input[name="sanitizer"]').forEach((input) => {
-    input.addEventListener("change", setTargetsFromProfile);
+    input.addEventListener("change", () => {
+      savePoolSettings();
+      setTargetsFromProfile();
+    });
   });
 
   all('input[name="testSet"]').forEach((input) => {
@@ -729,9 +851,40 @@ function bindEvents() {
   });
 
   $("calculateNow").addEventListener("click", calculate);
-  $("parseReport").addEventListener("click", parseReport);
   $("resetTargets").addEventListener("click", setTargetsFromProfile);
+  $("saveTargets").addEventListener("click", () => {
+    saveState();
+    setStatus("Targets saved");
+    showPage("calculator");
+  });
+  $("saveChemicals").addEventListener("click", () => {
+    saveState();
+    setStatus("Chemicals saved");
+    showPage("calculator");
+  });
   $("resetApp").addEventListener("click", resetApp);
+
+  $("menuToggle").addEventListener("click", openDrawer);
+  $("drawerClose").addEventListener("click", closeDrawer);
+  $("drawerOverlay").addEventListener("click", closeDrawer);
+  all("[data-nav-page]").forEach((button) => {
+    button.addEventListener("click", () => showPage(button.dataset.navPage));
+  });
+
+  $("appDrawer").addEventListener("touchstart", (event) => {
+    drawerTouchStartX = event.touches[0].clientX;
+  }, { passive: true });
+
+  $("appDrawer").addEventListener("touchend", (event) => {
+    if (drawerTouchStartX === null) return;
+    const delta = event.changedTouches[0].clientX - drawerTouchStartX;
+    drawerTouchStartX = null;
+    if (delta < -50) closeDrawer();
+  }, { passive: true });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDrawer();
+  });
 }
 
 bindEvents();

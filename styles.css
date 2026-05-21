@@ -34,6 +34,10 @@ body {
   font-size: 16px;
 }
 
+body:has(.app-drawer.is-open) {
+  overflow: hidden;
+}
+
 button,
 input,
 select,
@@ -53,6 +57,33 @@ button {
   max-width: 1440px;
   margin: 0 auto;
   padding: 24px 28px 12px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.icon-button {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  padding: 9px;
+  border: 1px solid #c7d5d0;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.icon-button span {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: #263431;
 }
 
 .brand {
@@ -113,6 +144,96 @@ button {
   gap: 10px;
 }
 
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(10, 20, 18, 0.35);
+}
+
+.app-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  width: min(320px, 86vw);
+  padding: 18px;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 18px 0 45px rgba(15, 45, 39, 0.18);
+  transform: translateX(-105%);
+  transition: transform 180ms ease;
+}
+
+.app-drawer.is-open {
+  transform: translateX(0);
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-head strong {
+  font-size: 1.05rem;
+}
+
+.icon-close {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #c7d5d0;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.icon-close::before,
+.icon-close::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 9px;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: #263431;
+}
+
+.icon-close::before {
+  transform: rotate(45deg);
+}
+
+.icon-close::after {
+  transform: rotate(-45deg);
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #263431;
+  padding: 10px 12px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.drawer-link.is-active,
+.drawer-link:hover {
+  border-color: rgba(15, 118, 110, 0.24);
+  background: #dff5ef;
+  color: var(--teal-dark);
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -126,12 +247,29 @@ button {
   white-space: nowrap;
 }
 
+.app-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.app-page {
+  display: none;
+}
+
+.app-page.is-active {
+  display: block;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
   gap: 20px;
   max-width: 1440px;
   margin: 0 auto;
+  padding: 12px 28px 34px;
+}
+
+.single-page {
   padding: 12px 28px 34px;
 }
 
@@ -168,6 +306,11 @@ button {
   margin-bottom: 16px;
 }
 
+.section-title > div {
+  display: grid;
+  gap: 4px;
+}
+
 .section-title h2,
 .results-head h2 {
   margin: 0;
@@ -191,6 +334,10 @@ button {
 .targets-grid,
 .chemicals-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.setup-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .readings-grid {
@@ -327,6 +474,14 @@ textarea:focus {
   background: rgba(255, 255, 255, 0.62);
 }
 
+.button-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 details {
   display: grid;
 }
@@ -354,6 +509,37 @@ details summary strong {
 .results-list {
   display: grid;
   gap: 10px;
+}
+
+.chemical-name-grid,
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.chemical-name-grid div,
+.notes-grid article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.chemical-name-grid strong,
+.notes-grid strong {
+  color: #263431;
+  font-size: 0.88rem;
+}
+
+.chemical-name-grid span,
+.notes-grid span {
+  color: var(--muted);
+  line-height: 1.42;
 }
 
 .dose-card,
@@ -480,6 +666,12 @@ details summary strong {
   .readings-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .setup-grid,
+  .chemical-name-grid,
+  .notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -497,10 +689,16 @@ details summary strong {
     padding: 8px 14px 24px;
   }
 
+  .single-page {
+    padding: 8px 14px 24px;
+  }
+
   .setup-grid,
   .targets-grid,
   .chemicals-grid,
-  .readings-grid {
+  .readings-grid,
+  .chemical-name-grid,
+  .notes-grid {
     grid-template-columns: 1fr;
   }
 
@@ -512,6 +710,15 @@ details summary strong {
   .results-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .button-row {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .button-row button {
+    width: 100%;
   }
 
   details summary {
