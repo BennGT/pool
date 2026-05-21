@@ -383,6 +383,19 @@ details summary {
   min-height: 1em;
 }
 
+.fixed-value {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid #c7d5d0;
+  border-radius: 8px;
+  background: #eef5f2;
+  color: #243431;
+  padding: 9px 11px;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
 input,
 select,
 textarea {

@@ -34,7 +34,6 @@ const storageKey = "pool-dose-calculator-v3";
 
 const valueIds = [
   "poolVolume",
-  "volumeUnit",
   "freeChlorine",
   "totalChlorine",
   "combinedChlorine",
@@ -147,8 +146,7 @@ function syncCombinedChlorine() {
 }
 
 function poolVolumeLitres() {
-  const volume = positiveNumber("poolVolume", 0);
-  return $("volumeUnit").value === "gallons" ? volume * 3.785411784 : volume;
+  return poolDefaults[currentPoolKey()].volume;
 }
 
 function formatNumber(value, maxDigits = 1) {
@@ -294,7 +292,7 @@ function applyPoolProfile(key = currentPoolKey()) {
     sanitizer: poolDefaults[key].sanitizer
   };
   setValue("poolVolume", poolDefaults[key].volume);
-  setValue("volumeUnit", "litres");
+  $("poolVolumeDisplay").textContent = `${formatNumber(poolDefaults[key].volume, 0)} L`;
   setRadio("sanitizer", settings.sanitizer);
   lastPoolKey = key;
   updateVisibility();
@@ -393,7 +391,6 @@ function loadState() {
     Object.entries(state.values || {}).forEach(([id, value]) => {
       if (!$(id)) return;
       if (id === "poolVolume") return;
-      if (id === "volumeUnit") return;
       setValue(id, value);
     });
   } catch {
@@ -814,7 +811,6 @@ function resetApp() {
   profileSettings = makeDefaultProfileSettings();
   valueIds.forEach((id) => {
     if (id === "poolVolume") setValue(id, "7500");
-    else if (id === "volumeUnit") setValue(id, "litres");
     else if (id === "targetChlorine") setValue(id, "1.5");
     else if (id === "targetCombined") setValue(id, "1");
     else if (id === "targetBromine") setValue(id, "4");
