@@ -3,7 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#a43a24">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RNW Pools">
+    <meta name="application-name" content="RNW Pools">
+    <meta name="description" content="Rock N Water Landscapes pool chemical dose calculator.">
     <title>Pool Dose Calculator</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/app-icon-180.png">
     <link rel="stylesheet" href="styles.css">
     <script defer src="app.js"></script>
   </head>
@@ -20,7 +30,7 @@
           <img class="brand-logo" src="assets/rnw-logo.png" alt="Rock N Water Landscapes">
           <div>
             <h1>Pool Dose Calculator</h1>
-            <p>Daily and weekly commercial pool dosing</p>
+            <p>Daily and weekly pool dosing</p>
           </div>
         </div>
       </div>
@@ -50,7 +60,6 @@
             <section class="panel">
               <div class="section-title">
                 <h2>Pool Setup</h2>
-                <span id="profileHint">Victorian chlorine profile</span>
               </div>
 
               <div class="form-grid setup-grid">
@@ -68,7 +77,6 @@
                   <span>Pool volume</span>
                   <strong id="poolVolumeDisplay" class="fixed-value">7,500 L</strong>
                   <input id="poolVolume" type="hidden" value="7500">
-                  <small>Set by selected pool</small>
                 </label>
 
                 <fieldset class="segmented sanitizer-segment" aria-label="Sanitiser type">
@@ -173,7 +181,7 @@
             <div class="section-title">
               <div>
                 <h2>Edit Targets</h2>
-                <span id="targetSummary">Victorian commercial defaults</span>
+                <span id="targetSummary">Victorian defaults</span>
               </div>
               <div class="button-row">
                 <button id="resetTargets" class="secondary-button" type="button">Use Victorian preset</button>

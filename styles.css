@@ -349,6 +349,12 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.test-segment span,
+.sanitizer-segment span {
+  justify-content: center;
+  text-align: center;
+}
+
 .readings-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -717,18 +723,27 @@ details summary strong {
 
   .brand-row {
     align-items: flex-start;
-  }
-
-  .brand {
-    align-items: flex-start;
-    flex-direction: column;
     gap: 10px;
   }
 
   .brand-logo {
-    width: min(260px, 72vw);
+    width: min(150px, 42vw);
     min-width: 0;
-    height: 64px;
+    height: 46px;
+    padding: 5px 7px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand h1 {
+    font-size: 1.05rem;
+  }
+
+  .brand p {
+    font-size: 0.82rem;
+    line-height: 1.25;
   }
 
   .top-actions {
@@ -761,6 +776,20 @@ details summary strong {
 
   .segmented {
     grid-template-columns: 1fr;
+  }
+
+  .sanitizer-segment {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .test-segment {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sanitizer-segment span,
+  .test-segment span {
+    min-height: 48px;
+    padding-inline: 8px;
   }
 
   .section-title,

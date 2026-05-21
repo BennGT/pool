@@ -24,12 +24,6 @@ const poolDefaults = {
   }
 };
 
-const sanitizerLabels = {
-  chlorine: "Victorian chlorine profile",
-  salt: "Victorian salt profile",
-  bromine: "Victorian bromine profile"
-};
-
 const storageKey = "pool-dose-calculator-v3";
 
 const valueIds = [
@@ -340,7 +334,6 @@ function updateVisibility() {
   all(".salt-field").forEach((node) => node.classList.toggle("is-hidden", !isFull || !isSalt));
   all(".target-salt").forEach((node) => node.classList.toggle("is-hidden", !isSalt));
 
-  $("profileHint").textContent = `${pool.name} - ${sanitizerLabels[sanitizer]}`;
   $("poolProfileNote").textContent = pool.note;
   $("testSetHint").textContent = testSet === "full" ? "Weekly test" : "Daily test";
   $("targetSummary").textContent = targetSummary;
@@ -349,24 +342,6 @@ function updateVisibility() {
   $("targetChlorineHelp").textContent = cyaAllowed || isSalt ? "Vic min 2.0 ppm where CYA is used" : "Vic min 1.0 ppm without CYA";
   $("targetCyaHelp").textContent = cyaAllowed ? "Vic outdoor max 100 ppm; ideal 30 ppm or less" : "Indoor pools do not use CYA";
   $("chemicalSummary").textContent = `${formatNumber(positiveNumber("muriaticStrength", 31.45), 1)}% hydrochloric acid, ${formatNumber(positiveNumber("calciumPurity", 77), 1)}% calcium chloride`;
-  fitSegmentLabels();
-}
-
-function fitSegmentLabels() {
-  if (typeof window === "undefined" || !window.getComputedStyle) return;
-
-  all(".segmented span").forEach((label) => {
-    if (!label.clientWidth) return;
-
-    label.style.fontSize = "";
-    const baseSize = parseFloat(window.getComputedStyle(label).fontSize);
-    let nextSize = baseSize;
-
-    while (label.scrollWidth > label.clientWidth && nextSize > 10) {
-      nextSize -= 0.5;
-      label.style.fontSize = `${nextSize}px`;
-    }
-  });
 }
 
 function saveState() {
@@ -920,8 +895,13 @@ function bindEvents() {
     if (event.key === "Escape") closeDrawer();
   });
 
-  window.addEventListener("resize", fitSegmentLabels);
 }
 
 bindEvents();
 loadState();
+
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
