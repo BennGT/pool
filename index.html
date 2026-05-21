@@ -58,7 +58,7 @@
               </div>
 
               <div class="form-grid setup-grid">
-                <label class="field">
+                <label class="field pool-profile-field">
                   <span>Pool profile</span>
                   <select id="poolProfile">
                     <option value="chiller">Chiller</option>
@@ -68,7 +68,7 @@
                   <small id="poolProfileNote">CYA available if selected</small>
                 </label>
 
-                <label class="field">
+                <label class="field pool-volume-field">
                   <span>Pool volume</span>
                   <div class="inline-input">
                     <input id="poolVolume" type="number" min="0" step="100" value="7500" inputmode="decimal" readonly>
@@ -80,15 +80,14 @@
                   <small>Fixed profile volume</small>
                 </label>
 
-                <fieldset class="segmented" aria-label="Sanitiser type">
+                <fieldset class="segmented sanitizer-segment" aria-label="Sanitiser type">
                   <legend>Sanitiser</legend>
                   <label><input type="radio" name="sanitizer" value="chlorine" checked><span>Chlorine</span></label>
                   <label><input type="radio" name="sanitizer" value="salt"><span>Salt</span></label>
                   <label><input type="radio" name="sanitizer" value="bromine"><span>Bromine</span></label>
                 </fieldset>
 
-                <fieldset class="segmented" aria-label="Test set">
-                  <legend>Test set</legend>
+                <fieldset class="segmented test-segment" aria-label="Test set">
                   <label><input type="radio" name="testSet" value="basic" checked><span>Daily</span></label>
                   <label><input type="radio" name="testSet" value="full"><span>Weekly</span></label>
                 </fieldset>
@@ -165,7 +164,6 @@
                 <h2>Doses</h2>
                 <p id="volumeReadout">7,500 L pool</p>
               </div>
-              <button id="calculateNow" class="primary-button" type="button">Calculate</button>
             </div>
 
             <div id="results" class="results-list">
@@ -173,11 +171,6 @@
                 <strong>Enter readings</strong>
                 <span>Doses appear as soon as there is enough data.</span>
               </article>
-            </div>
-
-            <div class="reference-box">
-              <strong>Working note</strong>
-              <span>Estimates use saved product strengths. Label directions, equipment manuals, and local rules take priority.</span>
             </div>
           </aside>
         </div>

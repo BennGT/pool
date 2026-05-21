@@ -330,14 +330,33 @@ button {
   gap: 14px;
 }
 
-.setup-grid,
 .targets-grid,
 .chemicals-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .setup-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 18px;
+  row-gap: 16px;
+}
+
+.pool-profile-field {
+  grid-column: span 3;
+}
+
+.pool-volume-field {
+  grid-column: span 2;
+}
+
+.sanitizer-segment {
+  grid-column: span 4;
+}
+
+.test-segment {
+  grid-column: span 3;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .readings-grid {
@@ -437,17 +456,18 @@ textarea:focus {
 .segmented span {
   display: grid;
   place-items: center;
-  min-height: 42px;
-  padding: 8px;
+  min-height: 46px;
+  padding: 10px 12px;
   border: 1px solid #c7d5d0;
   border-radius: 8px;
   background: var(--surface-soft);
   color: #34413e;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.1;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   text-align: center;
+  white-space: nowrap;
 }
 
 .segmented input:checked + span {
@@ -620,8 +640,7 @@ details summary strong {
 }
 
 .dose-card p,
-.empty-state span,
-.reference-box span {
+.empty-state span {
   margin: 0;
   color: var(--muted);
   line-height: 1.42;
@@ -644,19 +663,8 @@ details summary strong {
   font-size: 0.9rem;
 }
 
-.empty-state strong,
-.reference-box strong {
+.empty-state strong {
   color: #263431;
-}
-
-.reference-box {
-  display: grid;
-  gap: 5px;
-  margin-top: 14px;
-  padding: 12px;
-  border: 1px solid #d9c69c;
-  border-radius: 8px;
-  background: #fff8e9;
 }
 
 .is-hidden {
@@ -676,10 +684,23 @@ details summary strong {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .setup-grid,
   .chemical-name-grid,
   .notes-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setup-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .pool-profile-field,
+  .sanitizer-segment {
+    grid-column: span 7;
+  }
+
+  .pool-volume-field,
+  .test-segment {
+    grid-column: span 5;
   }
 }
 
@@ -709,6 +730,13 @@ details summary strong {
   .chemical-name-grid,
   .notes-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pool-profile-field,
+  .pool-volume-field,
+  .sanitizer-segment,
+  .test-segment {
+    grid-column: 1 / -1;
   }
 
   .segmented {

@@ -868,7 +868,6 @@ function bindEvents() {
     });
   });
 
-  $("calculateNow").addEventListener("click", calculate);
   $("resetTargets").addEventListener("click", setTargetsFromProfile);
   $("saveTargets").addEventListener("click", () => {
     saveState();
