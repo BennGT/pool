@@ -6,6 +6,7 @@ Open `index.html` in a browser. No install step is required.
 
 The app uses the Rock N Water Landscapes logo and a matching rust, orange-red, blue, black, and white interface theme.
 It includes app icons, a web app manifest, and a service worker so it can be added to the home screen on iOS and installed as a web app on Android/Chrome.
+The app also includes an Install App menu tab with platform-specific install prompts and home-screen instructions.
 
 ## What it handles
 

@@ -501,6 +501,11 @@ textarea:focus {
   padding: 8px 14px;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .secondary-button,
 .ghost-button {
   border: 1px solid #c7d5d0;
@@ -551,7 +556,8 @@ details summary strong {
 }
 
 .chemical-name-grid,
-.notes-grid {
+.notes-grid,
+.install-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
@@ -559,7 +565,8 @@ details summary strong {
 }
 
 .chemical-name-grid div,
-.notes-grid article {
+.notes-grid article,
+.install-grid article {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -570,15 +577,21 @@ details summary strong {
 }
 
 .chemical-name-grid strong,
-.notes-grid strong {
+.notes-grid strong,
+.install-grid strong {
   color: #263431;
   font-size: 0.88rem;
 }
 
 .chemical-name-grid span,
-.notes-grid span {
+.notes-grid span,
+.install-grid span {
   color: var(--muted);
   line-height: 1.42;
+}
+
+.install-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .dose-card,
@@ -695,7 +708,8 @@ details summary strong {
   }
 
   .chemical-name-grid,
-  .notes-grid {
+  .notes-grid,
+  .install-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -763,7 +777,8 @@ details summary strong {
   .chemicals-grid,
   .readings-grid,
   .chemical-name-grid,
-  .notes-grid {
+  .notes-grid,
+  .install-grid {
     grid-template-columns: 1fr;
   }
 

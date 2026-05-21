@@ -69,6 +69,7 @@ const savedValueIds = valueIds.filter((id) => !readingIds.includes(id));
 let profileSettings = makeDefaultProfileSettings();
 let lastPoolKey = "chiller";
 let drawerTouchStartX = null;
+let deferredInstallPrompt = null;
 
 const $ = (id) => document.getElementById(id);
 const all = (selector) => Array.from(document.querySelectorAll(selector));
@@ -776,6 +777,46 @@ function renderCards(cards) {
   });
 }
 
+function appIsInstalled() {
+  const standaloneDisplay = typeof window !== "undefined"
+    && window.matchMedia
+    && window.matchMedia("(display-mode: standalone)").matches;
+  const iosStandalone = typeof navigator !== "undefined" && navigator.standalone === true;
+  return standaloneDisplay || iosStandalone;
+}
+
+function updateInstallState(message) {
+  const button = $("installAppButton");
+  const status = $("installStatus");
+
+  if (appIsInstalled()) {
+    button.disabled = true;
+    status.textContent = "Installed on this device";
+    return;
+  }
+
+  if (deferredInstallPrompt) {
+    button.disabled = false;
+    status.textContent = message || "Install is available on this browser";
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = message || "Use your browser menu or Safari Share to add it to the home screen";
+}
+
+async function promptInstallApp() {
+  if (!deferredInstallPrompt) {
+    updateInstallState();
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice.catch(() => null);
+  deferredInstallPrompt = null;
+  updateInstallState("Install prompt closed");
+}
+
 function showPage(page) {
   all("[data-page-panel]").forEach((panel) => {
     panel.classList.toggle("is-active", panel.dataset.pagePanel === page);
@@ -784,6 +825,7 @@ function showPage(page) {
     button.classList.toggle("is-active", button.dataset.navPage === page);
   });
   closeDrawer();
+  if (page === "install") updateInstallState();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -871,6 +913,7 @@ function bindEvents() {
     setStatus("Chemicals saved");
     showPage("calculator");
   });
+  $("installAppButton").addEventListener("click", promptInstallApp);
   $("resetApp").addEventListener("click", resetApp);
 
   $("menuToggle").addEventListener("click", openDrawer);
@@ -899,6 +942,20 @@ function bindEvents() {
 
 bindEvents();
 loadState();
+updateInstallState();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallState();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    updateInstallState("Installed on this device");
+  });
+}
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {

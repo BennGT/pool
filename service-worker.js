@@ -1,4 +1,4 @@
-const CACHE_NAME = "rnw-pool-dose-v1";
+const CACHE_NAME = "rnw-pool-dose-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
