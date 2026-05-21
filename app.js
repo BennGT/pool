@@ -36,7 +36,6 @@ const valueIds = [
   "poolVolume",
   "freeChlorine",
   "totalChlorine",
-  "combinedChlorine",
   "bromine",
   "ph",
   "alkalinity",
@@ -127,21 +126,32 @@ function isSaltPool() {
 }
 
 function syncCombinedChlorine() {
-  if (selected("sanitizer") === "bromine") return null;
+  if (selected("sanitizer") === "bromine") {
+    $("combinedChlorineHelp").textContent = "not used for bromine";
+    return null;
+  }
 
   const free = numberValue("freeChlorine");
   const total = numberValue("totalChlorine");
 
   if (free !== null && total !== null) {
-    const combined = Math.max(total - free, 0);
+    const rawCombined = total - free;
+    const combined = Math.max(rawCombined, 0);
     setValue("combinedChlorine", combined.toFixed(1));
+    $("combinedChlorineHelp").textContent = rawCombined < 0
+      ? `total ${formatNumber(total, 1)} - free ${formatNumber(free, 1)} = 0.0 ppm (check readings)`
+      : `total ${formatNumber(total, 1)} - free ${formatNumber(free, 1)} = ${formatNumber(combined, 1)} ppm`;
     return combined;
   }
 
   if (free !== null || total !== null) {
     setValue("combinedChlorine", "");
+    $("combinedChlorineHelp").textContent = "enter free and total chlorine";
+    return null;
   }
 
+  setValue("combinedChlorine", "");
+  $("combinedChlorineHelp").textContent = "auto: total - free";
   return null;
 }
 
@@ -391,6 +401,7 @@ function loadState() {
     Object.entries(state.values || {}).forEach(([id, value]) => {
       if (!$(id)) return;
       if (id === "poolVolume") return;
+      if (id === "combinedChlorine") return;
       setValue(id, value);
     });
   } catch {
