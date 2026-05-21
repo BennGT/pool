@@ -70,6 +70,8 @@ const readingIds = [
   "salt"
 ];
 
+const savedValueIds = valueIds.filter((id) => !readingIds.includes(id));
+
 let profileSettings = makeDefaultProfileSettings();
 let lastPoolKey = "chiller";
 let drawerTouchStartX = null;
@@ -153,6 +155,12 @@ function syncCombinedChlorine() {
   setValue("combinedChlorine", "");
   $("combinedChlorineHelp").textContent = "auto: total - free";
   return null;
+}
+
+function clearReadings() {
+  readingIds.forEach((id) => setValue(id, ""));
+  setValue("combinedChlorine", "");
+  $("combinedChlorineHelp").textContent = "auto: total - free";
 }
 
 function poolVolumeLitres() {
@@ -370,7 +378,7 @@ function saveState() {
     values: {}
   };
 
-  valueIds.forEach((id) => {
+  savedValueIds.forEach((id) => {
     if ($(id)) state.values[id] = $(id).value;
   });
 
@@ -402,6 +410,7 @@ function loadState() {
       if (!$(id)) return;
       if (id === "poolVolume") return;
       if (id === "combinedChlorine") return;
+      if (readingIds.includes(id)) return;
       setValue(id, value);
     });
   } catch {
@@ -856,6 +865,7 @@ function bindEvents() {
   $("poolProfile").addEventListener("change", () => {
     savePoolSettings(lastPoolKey);
     applyPoolProfile(currentPoolKey());
+    clearReadings();
     saveState();
     calculate();
   });
