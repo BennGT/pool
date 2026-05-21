@@ -1,18 +1,21 @@
 :root {
   color-scheme: light;
-  --bg: #eef4f2;
+  --bg: #f2f5f4;
   --surface: #ffffff;
-  --surface-soft: #f7faf8;
-  --ink: #17211f;
-  --muted: #65736f;
-  --line: #d6e0dc;
-  --teal: #0f766e;
-  --teal-dark: #115e59;
-  --amber: #b7791f;
+  --surface-soft: #f8faf9;
+  --ink: #05090a;
+  --muted: #66706f;
+  --line: #d8dfdc;
+  --teal: #087ca5;
+  --teal-dark: #075f7f;
+  --rust: #a43a24;
+  --rust-dark: #7f2c1b;
+  --orange: #e24724;
+  --amber: #a43a24;
   --red: #b91c1c;
-  --blue: #2563eb;
+  --blue: #087ca5;
   --green: #15803d;
-  --shadow: 0 18px 45px rgba(15, 45, 39, 0.12);
+  --shadow: 0 18px 45px rgba(5, 9, 10, 0.10);
 }
 
 * {
@@ -27,7 +30,8 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(15, 118, 110, 0.10), rgba(238, 244, 242, 0) 260px),
+    linear-gradient(180deg, rgba(8, 124, 165, 0.12), rgba(242, 245, 244, 0) 260px),
+    linear-gradient(90deg, rgba(164, 58, 36, 0.06), rgba(226, 71, 36, 0) 32%, rgba(8, 124, 165, 0.05)),
     var(--bg);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -74,7 +78,7 @@ button {
   height: 42px;
   flex: 0 0 auto;
   padding: 9px;
-  border: 1px solid #c7d5d0;
+  border: 1px solid #cfd8d5;
   border-radius: 8px;
   background: var(--surface);
 }
@@ -89,7 +93,7 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
 }
 
@@ -109,33 +113,19 @@ button {
   font-size: 0.95rem;
 }
 
-.brand-mark {
-  display: grid;
-  align-content: center;
-  gap: 4px;
-  width: 46px;
-  height: 46px;
-  flex: 0 0 auto;
-  padding: 10px 8px;
+.brand-logo {
+  width: min(300px, 36vw);
+  max-width: 300px;
+  min-width: 180px;
+  height: 76px;
+  object-fit: contain;
+  object-position: left center;
+  flex: 0 1 auto;
+  padding: 8px 10px;
+  border: 1px solid rgba(5, 9, 10, 0.08);
   border-radius: 8px;
-  background: #0f766e;
-  box-shadow: inset 0 -10px 18px rgba(255, 255, 255, 0.14);
-}
-
-.brand-mark span {
-  display: block;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.brand-mark span:nth-child(2) {
-  width: 72%;
-  margin-left: auto;
-}
-
-.brand-mark span:nth-child(3) {
-  width: 84%;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(5, 9, 10, 0.08);
 }
 
 .top-actions {
@@ -229,8 +219,8 @@ button {
 
 .drawer-link.is-active,
 .drawer-link:hover {
-  border-color: rgba(15, 118, 110, 0.24);
-  background: #dff5ef;
+  border-color: rgba(8, 124, 165, 0.26);
+  background: #e2f3f9;
   color: var(--teal-dark);
 }
 
@@ -239,7 +229,7 @@ button {
   align-items: center;
   min-height: 34px;
   padding: 6px 12px;
-  border: 1px solid rgba(15, 118, 110, 0.24);
+  border: 1px solid rgba(8, 124, 165, 0.24);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--teal-dark);
@@ -282,7 +272,7 @@ button {
 .results-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--shadow);
 }
 
@@ -389,7 +379,7 @@ details summary {
   min-height: 42px;
   border: 1px solid #c7d5d0;
   border-radius: 8px;
-  background: #eef5f2;
+  background: #edf6f9;
   color: #243431;
   padding: 9px 11px;
   font-size: 1rem;
@@ -410,12 +400,12 @@ textarea {
 }
 
 input[readonly] {
-  background: #eef5f2;
+  background: #edf6f9;
   color: #42504d;
 }
 
 select[disabled] {
-  background: #eef5f2;
+  background: #edf6f9;
   color: #42504d;
   opacity: 1;
   cursor: default;
@@ -431,7 +421,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+  box-shadow: 0 0 0 3px rgba(8, 124, 165, 0.16);
 }
 
 .inline-input {
@@ -484,9 +474,10 @@ textarea:focus {
 }
 
 .segmented input:checked + span {
-  border-color: var(--teal);
-  background: #dff5ef;
-  color: var(--teal-dark);
+  border-color: var(--rust);
+  background: #f9e9e4;
+  color: var(--rust-dark);
+  box-shadow: inset 0 -3px 0 rgba(226, 71, 36, 0.18);
 }
 
 .primary-button,
@@ -498,8 +489,8 @@ textarea:focus {
 }
 
 .primary-button {
-  border: 1px solid var(--teal-dark);
-  background: var(--teal);
+  border: 1px solid var(--rust-dark);
+  background: var(--rust);
   color: #ffffff;
   padding: 8px 14px;
 }
@@ -622,7 +613,7 @@ details summary strong {
 }
 
 .badge.watch {
-  background: var(--amber);
+  background: var(--rust);
 }
 
 .badge.stop {
@@ -722,6 +713,22 @@ details summary strong {
     align-items: stretch;
     flex-direction: column;
     padding: 18px 14px 8px;
+  }
+
+  .brand-row {
+    align-items: flex-start;
+  }
+
+  .brand {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .brand-logo {
+    width: min(260px, 72vw);
+    min-width: 0;
+    height: 64px;
   }
 
   .top-actions {

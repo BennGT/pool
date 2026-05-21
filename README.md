@@ -4,6 +4,8 @@ A static, local web app for converting pool test readings into practical chemica
 
 Open `index.html` in a browser. No install step is required.
 
+The app uses the Rock N Water Landscapes logo and a matching rust, orange-red, blue, black, and white interface theme.
+
 ## What it handles
 
 - Sanitiser profiles: chlorine, salt chlorinated, and bromine.
