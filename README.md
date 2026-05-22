@@ -12,7 +12,7 @@ The app also includes an Install App menu tab with platform-specific install pro
 
 - Pool types: chlorine, salt, mineral, and bromine.
 - Pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, Indoor Swimming Pool 150,000 L, and a Custom Pool option.
-- Volume calculator for rectangle, square, round, and kidney-shaped pools.
+- Volume calculator for length, width, and average depth.
 - Surface selector: render, fibreglass, or vinyl.
 - Pool volume display can switch between litres and gallons while dosing still uses the saved litre volume.
 - Test result display can switch between ppm and mg/L. The calculation value is the same for pool water.

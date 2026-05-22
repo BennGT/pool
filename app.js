@@ -189,47 +189,25 @@ function dimensionToMetres(value) {
 }
 
 function calculatedVolumeLitres() {
-  const shape = $("volumeShape").value;
+  const length = dimensionToMetres(numberValue("volumeLength"));
+  const width = dimensionToMetres(numberValue("volumeWidth"));
   const shallow = dimensionToMetres(numberValue("volumeShallowDepth"));
   const deep = dimensionToMetres(numberValue("volumeDeepDepth"));
   const averageDepth = shallow && deep ? (shallow + deep) / 2 : shallow || deep;
 
-  if (!averageDepth) return null;
+  if (!length || !width || !averageDepth) return null;
 
-  let area = null;
-
-  if (shape === "round") {
-    const diameter = dimensionToMetres(numberValue("volumeDiameter"));
-    if (!diameter) return null;
-    area = Math.PI * (diameter / 2) ** 2;
-  } else if (shape === "square") {
-    const side = dimensionToMetres(numberValue("volumeLength"));
-    if (!side) return null;
-    area = side ** 2;
-  } else {
-    const length = dimensionToMetres(numberValue("volumeLength"));
-    const width = dimensionToMetres(numberValue("volumeWidth"));
-    if (!length || !width) return null;
-    area = length * width * (shape === "kidney" ? 0.85 : 1);
-  }
-
-  return area * averageDepth * 1000;
+  return length * width * averageDepth * 1000;
 }
 
 function updateVolumeCalculator() {
-  if (!$("volumeShape")) return;
+  if (!$("volumeCalcResult")) return;
 
-  const shape = $("volumeShape").value;
   const unit = dimensionUnitLabel();
   const volume = calculatedVolumeLitres();
   const result = $("volumeCalcResult");
   const formula = $("volumeCalcFormula");
   const useButton = $("useCalculatedVolume");
-
-  all(".volume-width-field").forEach((node) => node.classList.toggle("is-hidden", shape === "round" || shape === "square"));
-  all(".volume-diameter-field").forEach((node) => node.classList.toggle("is-hidden", shape !== "round"));
-  all(".volume-length-field").forEach((node) => node.classList.toggle("is-hidden", shape === "round"));
-  $("volumeLengthLabel").textContent = shape === "square" ? "Side length" : "Length";
 
   if (!volume) {
     result.textContent = "Enter dimensions";
@@ -239,9 +217,7 @@ function updateVolumeCalculator() {
   }
 
   result.textContent = formatPoolVolume(volume);
-  formula.textContent = shape === "kidney"
-    ? "Kidney pools use length x width x average depth x 0.85."
-    : "Calculated from surface area x average depth.";
+  formula.textContent = "Calculated from length x width x average depth.";
   useButton.disabled = false;
 }
 
@@ -1420,7 +1396,7 @@ function bindEvents() {
     input.addEventListener("change", updateVolumeCalculator);
   });
 
-  ["volumeShape", "volumeLength", "volumeWidth", "volumeDiameter", "volumeShallowDepth", "volumeDeepDepth"].forEach((id) => {
+  ["volumeLength", "volumeWidth", "volumeShallowDepth", "volumeDeepDepth"].forEach((id) => {
     if (!$(id)) return;
     $(id).addEventListener("input", updateVolumeCalculator);
     $(id).addEventListener("change", updateVolumeCalculator);
@@ -1484,7 +1460,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260523-tidy-volume", {
+    navigator.serviceWorker.register("service-worker.js?v=20260523-simple-volume", {
       updateViaCache: "none"
     }).catch(() => {});
   });

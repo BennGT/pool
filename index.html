@@ -10,12 +10,12 @@
     <meta name="application-name" content="RNW Pools">
     <meta name="description" content="Rock N Water Landscapes pool chemical dose calculator.">
     <title>Pool Dose Calculator</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260523-tidy-volume">
+    <link rel="manifest" href="manifest.webmanifest?v=20260523-simple-volume">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/app-icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=20260523-tidy-volume">
-    <script defer src="app.js?v=20260523-tidy-volume"></script>
+    <link rel="stylesheet" href="styles.css?v=20260523-simple-volume">
+    <script defer src="app.js?v=20260523-simple-volume"></script>
   </head>
   <body>
     <header class="topbar">
@@ -193,35 +193,20 @@
             </div>
 
             <div class="form-grid volume-grid">
-              <label class="field">
-                <span>Shape</span>
-                <select id="volumeShape">
-                  <option value="rectangle">Rectangle</option>
-                  <option value="square">Square</option>
-                  <option value="round">Round</option>
-                  <option value="kidney">Kidney</option>
-                </select>
-              </label>
-
               <fieldset class="segmented dimension-unit-segment" aria-label="Measurement units">
                 <legend>Measurements</legend>
                 <label><input type="radio" name="dimensionUnit" value="metres" checked><span>Metres</span></label>
                 <label><input type="radio" name="dimensionUnit" value="feet"><span>Feet</span></label>
               </fieldset>
 
-              <label class="field volume-length-field">
-                <span id="volumeLengthLabel">Length</span>
+              <label class="field">
+                <span>Length</span>
                 <input id="volumeLength" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
 
-              <label class="field volume-width-field">
+              <label class="field">
                 <span>Width</span>
                 <input id="volumeWidth" type="number" min="0" step="0.01" inputmode="decimal">
-              </label>
-
-              <label class="field volume-diameter-field is-hidden">
-                <span>Diameter</span>
-                <input id="volumeDiameter" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
 
               <label class="field">
