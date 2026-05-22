@@ -134,10 +134,10 @@ function syncCombinedChlorine() {
   if (free !== null && total !== null) {
     const rawCombined = total - free;
     const combined = Math.max(rawCombined, 0);
-    const combinedDisplay = formatTruncatedDecimal(combined, 1);
+    const combinedDisplay = formatTruncatedDecimal(combined, 2);
     $("combinedChlorineHelp").textContent = rawCombined < 0
-      ? `total ${formatTruncatedDecimal(total, 1)} - free ${formatTruncatedDecimal(free, 1)} = 0.0 ppm (check readings)`
-      : `total ${formatTruncatedDecimal(total, 1)} - free ${formatTruncatedDecimal(free, 1)} = ${combinedDisplay} ppm`;
+      ? `total ${formatTruncatedDecimal(total, 2)} - free ${formatTruncatedDecimal(free, 2)} = 0.00 ppm (check readings)`
+      : `total ${formatTruncatedDecimal(total, 2)} - free ${formatTruncatedDecimal(free, 2)} = ${combinedDisplay} ppm`;
     setValue("combinedChlorine", combinedDisplay);
     return combined;
   }
@@ -527,7 +527,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
       badge: "dose",
       amount: formatVolume(liquidMl),
       chemical: `${formatNumber(liquidStrength, 1)}% liquid chlorine`,
-      body: `Breakpoint estimate for ${formatTruncatedDecimal(combined, 1)} ppm combined chlorine. Victorian max is ${formatNumber(combinedAction, 1)} ppm and ideal is under ${formatNumber(combinedIdeal, 1)} ppm.`,
+      body: `Breakpoint estimate for ${formatTruncatedDecimal(combined, 2)} ppm combined chlorine. Victorian max is ${formatNumber(combinedAction, 1)} ppm and ideal is under ${formatNumber(combinedIdeal, 1)} ppm.`,
       effect: "Oxidises chloramines, which are used-up chlorine compounds that can cause odour, eye irritation and poor disinfection.",
       alt: [`Alternative: ${formatMass(granularGrams)} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
     });
@@ -535,7 +535,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
     cards.push({
       title: "Combined chlorine above ideal",
       badge: "watch",
-      amount: `${formatTruncatedDecimal(combined, 1)} ppm`,
+      amount: `${formatTruncatedDecimal(combined, 2)} ppm`,
       chemical: "combined chlorine",
       body: `Victorian guidance says combined chlorine should ideally be under ${formatNumber(combinedIdeal, 1)} ppm and must be less than free chlorine.`,
       effect: "Combined chlorine is chlorine that has reacted with contaminants; improved oxidation, ventilation, dilution or UV can reduce it."
