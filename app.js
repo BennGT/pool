@@ -479,7 +479,6 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   const combined = syncCombinedChlorine();
   const target = positiveNumber("targetChlorine", currentDefaultTargets().chlorine);
   const combinedAction = positiveNumber("targetCombined", 1);
-  const combinedIdeal = 0.2;
 
   if (free !== null) {
     if (free < target - 0.1) {
@@ -519,26 +518,22 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   }
 
   if (combined !== null && combined > combinedAction) {
-    const shockDelta = combined * 10;
-    const liquidMl = ppmDose(volume, shockDelta, liquidStrength);
-    const granularGrams = ppmDose(volume, shockDelta, granularStrength);
     cards.push({
-      title: "Combined chlorine cleanup",
-      badge: "dose",
-      amount: formatVolume(liquidMl),
-      chemical: `${formatNumber(liquidStrength, 1)}% liquid chlorine`,
-      body: `Breakpoint estimate for ${formatTruncatedDecimal(combined, 2)} ppm combined chlorine. Victorian max is ${formatNumber(combinedAction, 1)} ppm and ideal is under ${formatNumber(combinedIdeal, 1)} ppm.`,
-      effect: "Oxidises chloramines, which are used-up chlorine compounds that can cause odour, eye irritation and poor disinfection.",
-      alt: [`Alternative: ${formatMass(granularGrams)} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
-    });
-  } else if (combined !== null && combined > combinedIdeal) {
-    cards.push({
-      title: "Combined chlorine above ideal",
-      badge: "watch",
+      title: "Combined chlorine over limit",
+      badge: "stop",
       amount: `${formatTruncatedDecimal(combined, 2)} ppm`,
       chemical: "combined chlorine",
-      body: `Victorian guidance says combined chlorine should ideally be under ${formatNumber(combinedIdeal, 1)} ppm and must be less than free chlorine.`,
-      effect: "Combined chlorine is chlorine that has reacted with contaminants; improved oxidation, ventilation, dilution or UV can reduce it."
+      body: `Combined chlorine is over the ${formatTruncatedDecimal(combinedAction, 2)} ppm action level.`,
+      effect: "Investigate chloramines and treat according to site procedure. Balance pH, improve oxidation/ventilation, and retest."
+    });
+  } else if (combined !== null) {
+    cards.push({
+      title: "Combined chlorine pass",
+      badge: "ok",
+      amount: `${formatTruncatedDecimal(combined, 2)} ppm`,
+      chemical: "combined chlorine",
+      body: `Combined chlorine is under the ${formatTruncatedDecimal(combinedAction, 2)} ppm action level.`,
+      effect: "Pass for the entered free and total chlorine readings."
     });
   }
 }
@@ -970,7 +965,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260522-cc2", {
+    navigator.serviceWorker.register("service-worker.js?v=20260522-cc-pass", {
       updateViaCache: "none"
     }).catch(() => {});
   });

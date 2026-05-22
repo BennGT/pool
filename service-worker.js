@@ -1,5 +1,5 @@
-const CACHE_NAME = "rnw-pool-dose-v3";
-const ASSET_VERSION = "20260522-cc2";
+const CACHE_NAME = "rnw-pool-dose-v4";
+const ASSET_VERSION = "20260522-cc-pass";
 const APP_SHELL = [
   "./",
   "./index.html",
