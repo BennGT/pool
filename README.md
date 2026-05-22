@@ -10,14 +10,17 @@ The app also includes an Install App menu tab with platform-specific install pro
 
 ## What it handles
 
-- Sanitiser profiles: chlorine, salt chlorinated, and bromine.
+- Pool types: chlorine, salt, mineral, and bromine.
 - Fixed pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, and Indoor Swimming Pool 150,000 L.
+- Surface selector: plaster, fibreglass, or vinyl.
+- Pool volume display can switch between litres and gallons while dosing still uses the saved litre volume.
 - Daily test set: free chlorine, total chlorine, combined chlorine, and pH.
-- Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, and salt for salt pools.
+- Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, salt for salt/mineral pools, and temperature.
 - Combined chlorine is automatically calculated as `total chlorine - free chlorine`.
 - Editable product strengths and target levels, saved in the browser for later use.
-- Hamburger menu access to calculator, targets, chemicals, and reference notes.
-- Dose cards explain what each chemical does to the water.
+- Hamburger menu access to calculator, targets, chemicals, history, safety, install, and reference notes.
+- Dose cards explain what each chemical does to the water and include short action steps for out-of-target readings.
+- Local history saves test logs and chemical addition logs, with simple trend charts.
 
 ## Calculation notes
 

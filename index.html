@@ -10,12 +10,12 @@
     <meta name="application-name" content="RNW Pools">
     <meta name="description" content="Rock N Water Landscapes pool chemical dose calculator.">
     <title>Pool Dose Calculator</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-cc-pass">
+    <link rel="manifest" href="manifest.webmanifest?v=20260522-mvp-refine">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/app-icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=20260522-cc-pass">
-    <script defer src="app.js?v=20260522-cc-pass"></script>
+    <link rel="stylesheet" href="styles.css?v=20260522-mvp-refine">
+    <script defer src="app.js?v=20260522-mvp-refine"></script>
   </head>
   <body>
     <header class="topbar">
@@ -50,6 +50,8 @@
       <button class="drawer-link is-active" type="button" data-nav-page="calculator">Calculator</button>
       <button class="drawer-link" type="button" data-nav-page="targets">Edit targets</button>
       <button class="drawer-link" type="button" data-nav-page="chemicals">Edit chemicals</button>
+      <button class="drawer-link" type="button" data-nav-page="history">History</button>
+      <button class="drawer-link" type="button" data-nav-page="safety">Safety</button>
       <button class="drawer-link" type="button" data-nav-page="install">Install app</button>
       <button class="drawer-link" type="button" data-nav-page="reference">Reference</button>
     </nav>
@@ -80,16 +82,32 @@
                   <input id="poolVolume" type="hidden" value="7500">
                 </label>
 
-                <fieldset class="segmented sanitizer-segment" aria-label="Sanitiser type">
-                  <legend>Sanitiser</legend>
+                <label class="field surface-field">
+                  <span>Surface</span>
+                  <select id="surfaceType">
+                    <option value="plaster">Plaster</option>
+                    <option value="fibreglass">Fibreglass</option>
+                    <option value="vinyl">Vinyl</option>
+                  </select>
+                </label>
+
+                <fieldset class="segmented sanitizer-segment" aria-label="Pool type">
+                  <legend>Pool type</legend>
                   <label><input type="radio" name="sanitizer" value="chlorine" checked><span>Chlorine</span></label>
                   <label><input type="radio" name="sanitizer" value="salt"><span>Salt</span></label>
+                  <label><input type="radio" name="sanitizer" value="mineral"><span>Mineral</span></label>
                   <label><input type="radio" name="sanitizer" value="bromine"><span>Bromine</span></label>
                 </fieldset>
 
                 <fieldset class="segmented test-segment" aria-label="Test set">
                   <label><input type="radio" name="testSet" value="basic" checked><span>Daily</span></label>
                   <label><input type="radio" name="testSet" value="full"><span>Weekly</span></label>
+                </fieldset>
+
+                <fieldset class="segmented unit-segment" aria-label="Pool volume units">
+                  <legend>Units</legend>
+                  <label><input type="radio" name="unitSystem" value="litres" checked><span>Litres</span></label>
+                  <label><input type="radio" name="unitSystem" value="gallons"><span>Gallons</span></label>
                 </fieldset>
               </div>
             </section>
@@ -154,6 +172,12 @@
                   <input id="salt" type="number" min="0" step="10" inputmode="decimal">
                   <small>ppm</small>
                 </label>
+
+                <label class="field">
+                  <span>Temperature</span>
+                  <input id="waterTemperature" type="number" min="0" max="60" step="0.1" inputmode="decimal">
+                  <small>degrees C</small>
+                </label>
               </div>
             </section>
           </section>
@@ -171,6 +195,16 @@
                 <strong>Enter readings</strong>
                 <span>Doses appear as soon as there is enough data.</span>
               </article>
+            </div>
+
+            <div class="results-actions">
+              <button id="saveTestLog" class="secondary-button" type="button">Save test log</button>
+              <button id="saveAdditions" class="secondary-button" type="button">Save chemical additions</button>
+            </div>
+
+            <div class="safety-strip" aria-label="Safety reminders">
+              <strong>Safety</strong>
+              <span>Space chemical additions, keep the pump running, and retest before redosing.</span>
             </div>
           </aside>
         </div>
@@ -297,6 +331,73 @@
                 <input id="stabilizerPurity" type="number" min="1" max="100" step="0.1" value="100">
                 <small>% cyanuric acid</small>
               </label>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-history" class="app-page" data-page-panel="history">
+        <div class="single-page">
+          <section class="panel">
+            <div class="section-title">
+              <div>
+                <h2>History</h2>
+                <span id="historySummary">Saved test logs and chemical additions</span>
+              </div>
+              <div class="button-row">
+                <select id="historyMetric" aria-label="Trend metric">
+                  <option value="freeChlorine">Free chlorine</option>
+                  <option value="combinedChlorine">Combined chlorine</option>
+                  <option value="ph">pH</option>
+                  <option value="alkalinity">Alkalinity</option>
+                  <option value="calcium">Calcium hardness</option>
+                  <option value="cya">Stabiliser</option>
+                  <option value="salt">Salt</option>
+                  <option value="waterTemperature">Temperature</option>
+                </select>
+                <button id="clearHistory" class="secondary-button" type="button">Clear history</button>
+              </div>
+            </div>
+
+            <div id="historyChart" class="history-chart" aria-label="Trend chart">
+              <span>No saved tests yet</span>
+            </div>
+
+            <div id="historyLog" class="history-log">
+              <article class="empty-state">
+                <strong>No history yet</strong>
+                <span>Save a test log or chemical additions from the calculator.</span>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="page-safety" class="app-page" data-page-panel="safety">
+        <div class="single-page">
+          <section class="panel">
+            <div class="section-title">
+              <h2>Safety</h2>
+              <span>Quick reminders before dosing</span>
+            </div>
+
+            <div class="notes-grid safety-grid">
+              <article>
+                <strong>Do not mix chemicals</strong>
+                <span>Add products separately and keep them in their own containers.</span>
+              </article>
+              <article>
+                <strong>Acid into water</strong>
+                <span>Add acid carefully to pool water. Never add water into acid.</span>
+              </article>
+              <article>
+                <strong>Space additions</strong>
+                <span>Run the pump and allow mixing time before adding another chemical.</span>
+              </article>
+              <article>
+                <strong>Retest first</strong>
+                <span>Retest before redosing, especially after acid, chlorine or large corrections.</span>
+              </article>
             </div>
           </section>
         </div>
