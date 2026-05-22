@@ -1,10 +1,11 @@
-const CACHE_NAME = "rnw-pool-dose-v2";
+const CACHE_NAME = "rnw-pool-dose-v3";
+const ASSET_VERSION = "20260522-cc2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./manifest.webmanifest",
+  `./styles.css?v=${ASSET_VERSION}`,
+  `./app.js?v=${ASSET_VERSION}`,
+  `./manifest.webmanifest?v=${ASSET_VERSION}`,
   "./assets/rnw-logo.png",
   "./assets/app-icon-32.png",
   "./assets/app-icon-180.png",
@@ -28,16 +29,42 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+function networkFirst(request, fallbackUrl) {
+  return fetch(request)
+    .then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      return response;
+    })
+    .catch(() => caches.match(request).then((cached) => cached || caches.match(fallbackUrl)));
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then((cached) =>
+    cached || fetch(request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      return response;
+    })
+  );
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) =>
-      cached || fetch(event.request).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => caches.match("./index.html"))
-    )
-  );
+  const url = new URL(event.request.url);
+  const isLocalAsset = url.origin === self.location.origin;
+  const isFreshAsset =
+    event.request.mode === "navigate"
+    || url.pathname.endsWith("/index.html")
+    || url.pathname.endsWith("/app.js")
+    || url.pathname.endsWith("/styles.css")
+    || url.pathname.endsWith("/manifest.webmanifest");
+
+  if (isLocalAsset && isFreshAsset) {
+    event.respondWith(networkFirst(event.request, "./index.html"));
+    return;
+  }
+
+  event.respondWith(cacheFirst(event.request));
 });
