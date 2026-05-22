@@ -169,30 +169,28 @@ function formatNumber(value, maxDigits = 1) {
   }).format(value);
 }
 
-function niceDose(value) {
-  if (!Number.isFinite(value) || value <= 0) return 0;
-  if (value < 10) return Math.round(value * 10) / 10;
-  if (value < 100) return Math.round(value);
-  if (value < 1000) return Math.round(value / 5) * 5;
-  if (value < 10000) return Math.round(value / 50) * 50;
-  return Math.round(value / 100) * 100;
+function formatDoseNumber(value) {
+  return new Intl.NumberFormat("en-AU", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1
+  }).format(value);
 }
 
 function formatMass(grams) {
-  const rounded = niceDose(grams);
-  if (rounded >= 1000) return `${formatNumber(rounded / 1000, 2)} kg`;
-  return `${formatNumber(rounded, 1)} g`;
+  if (!Number.isFinite(grams) || grams <= 0) return "0.0 g";
+  if (grams >= 1000) return `${formatDoseNumber(grams / 1000)} kg`;
+  return `${formatDoseNumber(grams)} g`;
 }
 
 function formatVolume(ml) {
-  const rounded = niceDose(ml);
-  if (rounded >= 1000) return `${formatNumber(rounded / 1000, 2)} L`;
-  return `${formatNumber(rounded, 1)} mL`;
+  if (!Number.isFinite(ml) || ml <= 0) return "0.0 mL";
+  if (ml >= 1000) return `${formatDoseNumber(ml / 1000)} L`;
+  return `${formatDoseNumber(ml)} mL`;
 }
 
 function formatLitres(litres) {
-  if (litres >= 1000) return `${formatNumber(niceDose(litres), 0)} L`;
-  return `${formatNumber(litres, 1)} L`;
+  if (!Number.isFinite(litres) || litres <= 0) return "0.0 L";
+  return `${formatDoseNumber(litres)} L`;
 }
 
 function ppmDose(volumeLitres, ppmDelta, productPercent) {
@@ -648,7 +646,7 @@ function calculateCalcium(cards, volume) {
     cards.push({
       title: "Calcium hardness is high",
       badge: "watch",
-      amount: `${formatNumber(fraction * 100, 0)}%`,
+      amount: `${formatDoseNumber(fraction * 100)}%`,
       chemical: "water replacement",
       body: `Approximate replacement volume: ${formatLitres(volume * fraction)}. Check source-water hardness first.`,
       effect: "Dilutes calcium hardness; chemical additions cannot directly remove calcium from pool water."
@@ -678,7 +676,7 @@ function calculateCya(cards, volume, sanitizer) {
     cards.push({
       title: "Stabiliser is high",
       badge: "watch",
-      amount: `${formatNumber(fraction * 100, 0)}%`,
+      amount: `${formatDoseNumber(fraction * 100)}%`,
       chemical: "water replacement",
       body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`,
       effect: "Dilutes stabiliser; CYA does not evaporate and usually only drops through water replacement or splash-out."
@@ -707,7 +705,7 @@ function calculateSalt(cards, volume, sanitizer) {
     cards.push({
       title: "Salt is high",
       badge: "watch",
-      amount: `${formatNumber(fraction * 100, 0)}%`,
+      amount: `${formatDoseNumber(fraction * 100)}%`,
       chemical: "water replacement",
       body: `Approximate replacement volume: ${formatLitres(volume * fraction)}.`,
       effect: "Dilutes salinity; salt cannot be chemically removed from the water."
