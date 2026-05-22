@@ -128,12 +128,6 @@ button {
   box-shadow: 0 8px 22px rgba(5, 9, 10, 0.08);
 }
 
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -222,19 +216,6 @@ button {
   border-color: rgba(8, 124, 165, 0.26);
   background: #e2f3f9;
   color: var(--teal-dark);
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  padding: 6px 12px;
-  border: 1px solid rgba(8, 124, 165, 0.24);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--teal-dark);
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .app-shell {
@@ -498,8 +479,7 @@ textarea:focus {
 }
 
 .primary-button,
-.secondary-button,
-.ghost-button {
+.secondary-button {
   min-height: 38px;
   border-radius: 8px;
   font-weight: 850;
@@ -517,16 +497,11 @@ button:disabled {
   opacity: 0.55;
 }
 
-.secondary-button,
-.ghost-button {
+.secondary-button {
   border: 1px solid #c7d5d0;
   background: var(--surface);
   color: #263431;
   padding: 8px 12px;
-}
-
-.ghost-button {
-  background: rgba(255, 255, 255, 0.62);
 }
 
 .button-row {
@@ -895,10 +870,6 @@ details summary strong {
   .brand p {
     font-size: 0.82rem;
     line-height: 1.25;
-  }
-
-  .top-actions {
-    justify-content: space-between;
   }
 
   .layout {

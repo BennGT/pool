@@ -10,12 +10,12 @@
     <meta name="application-name" content="RNW Pools">
     <meta name="description" content="Rock N Water Landscapes pool chemical dose calculator.">
     <title>Pool Dose Calculator</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260522-mvp-refine">
+    <link rel="manifest" href="manifest.webmanifest?v=20260522-no-reset">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/app-icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=20260522-mvp-refine">
-    <script defer src="app.js?v=20260522-mvp-refine"></script>
+    <link rel="stylesheet" href="styles.css?v=20260522-no-reset">
+    <script defer src="app.js?v=20260522-no-reset"></script>
   </head>
   <body>
     <header class="topbar">
@@ -35,10 +35,6 @@
         </div>
       </div>
 
-      <div class="top-actions">
-        <span id="statusPill" class="status-pill">Ready</span>
-        <button id="resetApp" class="ghost-button" type="button">Reset</button>
-      </div>
     </header>
 
     <div id="drawerOverlay" class="drawer-overlay" hidden></div>
@@ -432,7 +428,7 @@
             <div class="section-title">
               <div>
                 <h2>Install App</h2>
-                <span id="installStatus">Ready when your browser offers install</span>
+                <span id="installStatus">Install prompt appears when your browser supports it</span>
               </div>
               <button id="installAppButton" class="primary-button" type="button" disabled>Install app</button>
             </div>

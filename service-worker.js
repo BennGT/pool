@@ -1,5 +1,5 @@
-const CACHE_NAME = "rnw-pool-dose-v6";
-const ASSET_VERSION = "20260522-mvp-refine";
+const CACHE_NAME = "rnw-pool-dose-v7";
+const ASSET_VERSION = "20260522-no-reset";
 const APP_SHELL = [
   "./",
   "./index.html",

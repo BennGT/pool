@@ -453,10 +453,6 @@ function loadState() {
   calculate();
 }
 
-function setStatus(text) {
-  $("statusPill").textContent = text;
-}
-
 function hasAnyReading() {
   return readingIds.some((id) => numberValue(id) !== null);
 }
@@ -471,7 +467,6 @@ function calculate() {
   if (!volume || volume <= 0 || !hasAnyReading()) {
     lastCards = [];
     renderCards([]);
-    setStatus("Ready");
     saveState();
     return;
   }
@@ -512,8 +507,6 @@ function calculate() {
 
   lastCards = cards;
   renderCards(cards);
-  const doseCount = cards.filter((card) => card.badge === "dose").length;
-  setStatus(doseCount ? `${doseCount} dose${doseCount === 1 ? "" : "s"}` : "No dose");
   saveState();
 }
 
@@ -1025,7 +1018,6 @@ function saveTestLog() {
   const readings = currentReadingsSnapshot();
 
   if (!Object.keys(readings).length) {
-    setStatus("Enter readings first");
     return;
   }
 
@@ -1035,7 +1027,6 @@ function saveTestLog() {
     targets: currentTargetSnapshot()
   });
   saveHistory();
-  setStatus("Test log saved");
 }
 
 function isChemicalAddition(card) {
@@ -1055,7 +1046,6 @@ function saveChemicalAdditions() {
     }));
 
   if (!additions.length) {
-    setStatus("No additions to save");
     return;
   }
 
@@ -1064,7 +1054,6 @@ function saveChemicalAdditions() {
     additions
   });
   saveHistory();
-  setStatus("Additions saved");
 }
 
 function formatDateTime(value) {
@@ -1204,7 +1193,6 @@ function clearHistory() {
   historyEntries = [];
   localStorage.removeItem(historyKey);
   renderHistory();
-  setStatus("History cleared");
 }
 
 function appIsInstalled() {
@@ -1274,37 +1262,6 @@ function closeDrawer() {
   $("menuToggle").setAttribute("aria-expanded", "false");
 }
 
-function resetApp() {
-  localStorage.removeItem(storageKey);
-  profileSettings = makeDefaultProfileSettings();
-  valueIds.forEach((id) => {
-    if (id === "poolVolume") setValue(id, "7500");
-    else if (id === "targetChlorine") setValue(id, "1.5");
-    else if (id === "targetCombined") setValue(id, "1");
-    else if (id === "targetBromine") setValue(id, "4");
-    else if (id === "targetPh") setValue(id, "7.5");
-    else if (id === "targetAlkalinity") setValue(id, "100");
-    else if (id === "targetCalcium") setValue(id, "250");
-    else if (id === "targetCya") setValue(id, "30");
-    else if (id === "targetSalt") setValue(id, "4000");
-    else if (id === "liquidChlorineStrength") setValue(id, "12.5");
-    else if (id === "granularChlorineStrength") setValue(id, "65");
-    else if (id === "muriaticStrength") setValue(id, "31.45");
-    else if (id === "bromineStrength") setValue(id, "61");
-    else if (id === "calciumPurity") setValue(id, "77");
-    else if (id === "stabilizerPurity") setValue(id, "100");
-    else setValue(id, "");
-  });
-  setValue("poolProfile", "chiller");
-  setValue("surfaceType", "render");
-  setRadio("sanitizer", "chlorine");
-  setRadio("testSet", "basic");
-  setRadio("unitSystem", "litres");
-  applyPoolProfile("chiller");
-  showPage("calculator");
-  setStatus("Reset");
-}
-
 function bindEvents() {
   valueIds.forEach((id) => {
     if (!$(id)) return;
@@ -1353,12 +1310,10 @@ function bindEvents() {
   $("resetTargets").addEventListener("click", setTargetsFromProfile);
   $("saveTargets").addEventListener("click", () => {
     saveState();
-    setStatus("Targets saved");
     showPage("calculator");
   });
   $("saveChemicals").addEventListener("click", () => {
     saveState();
-    setStatus("Chemicals saved");
     showPage("calculator");
   });
   $("saveTestLog").addEventListener("click", saveTestLog);
@@ -1366,7 +1321,6 @@ function bindEvents() {
   $("historyMetric").addEventListener("change", renderHistory);
   $("clearHistory").addEventListener("click", clearHistory);
   $("installAppButton").addEventListener("click", promptInstallApp);
-  $("resetApp").addEventListener("click", resetApp);
 
   $("menuToggle").addEventListener("click", openDrawer);
   $("drawerClose").addEventListener("click", closeDrawer);
@@ -1412,7 +1366,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260522-mvp-refine", {
+    navigator.serviceWorker.register("service-worker.js?v=20260522-no-reset", {
       updateViaCache: "none"
     }).catch(() => {});
   });
