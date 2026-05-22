@@ -5,7 +5,7 @@ const poolDefaults = {
     name: "Chiller",
     volume: 7500,
     sanitizer: "chlorine",
-    surface: "plaster",
+    surface: "render",
     allowCya: true,
     note: "Stabiliser can be used if this pool is operated outdoors."
   },
@@ -13,7 +13,7 @@ const poolDefaults = {
     name: "Indoor Plunge",
     volume: 4500,
     sanitizer: "chlorine",
-    surface: "plaster",
+    surface: "render",
     allowCya: false,
     note: "Indoor pool: cyanuric acid is hidden."
   },
@@ -21,7 +21,7 @@ const poolDefaults = {
     name: "Indoor Swimming Pool",
     volume: 150000,
     sanitizer: "chlorine",
-    surface: "plaster",
+    surface: "render",
     allowCya: false,
     note: "Indoor pool: cyanuric acid is hidden."
   }
@@ -338,9 +338,10 @@ function setTargetsFromProfile() {
 
 function savePoolSettings(key = currentPoolKey()) {
   if (!poolDefaults[key]) return;
+  const surface = $("surfaceType").value === "plaster" ? "render" : $("surfaceType").value;
   profileSettings[key] = {
     sanitizer: selected("sanitizer"),
-    surface: $("surfaceType").value
+    surface
   };
 }
 
@@ -351,7 +352,8 @@ function applyPoolProfile(key = currentPoolKey()) {
   };
   setValue("poolVolume", poolDefaults[key].volume);
   $("poolVolumeDisplay").textContent = formatPoolVolume(poolDefaults[key].volume);
-  setValue("surfaceType", settings.surface || poolDefaults[key].surface);
+  const surface = settings.surface === "plaster" ? "render" : settings.surface || poolDefaults[key].surface;
+  setValue("surfaceType", surface);
   setRadio("sanitizer", settings.sanitizer);
   lastPoolKey = key;
   updateVisibility();
@@ -1014,7 +1016,7 @@ function historyBaseEntry(kind) {
     volumeLitres: poolVolumeLitres(),
     displayedVolume: formatPoolVolume(poolVolumeLitres()),
     sanitizer: selected("sanitizer"),
-    surface: $("surfaceType").value,
+    surface: $("surfaceType").value === "plaster" ? "render" : $("surfaceType").value,
     testSet: selected("testSet")
   };
 }
@@ -1294,7 +1296,7 @@ function resetApp() {
     else setValue(id, "");
   });
   setValue("poolProfile", "chiller");
-  setValue("surfaceType", "plaster");
+  setValue("surfaceType", "render");
   setRadio("sanitizer", "chlorine");
   setRadio("testSet", "basic");
   setRadio("unitSystem", "litres");
