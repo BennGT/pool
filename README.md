@@ -11,16 +11,18 @@ The app also includes an Install App menu tab with platform-specific install pro
 ## What it handles
 
 - Pool types: chlorine, salt, mineral, and bromine.
-- Fixed pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, and Indoor Swimming Pool 150,000 L.
+- Pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, Indoor Swimming Pool 150,000 L, and a Custom Pool option.
+- Volume calculator for rectangle, square, round, and kidney-shaped pools.
 - Surface selector: render, fibreglass, or vinyl.
 - Pool volume display can switch between litres and gallons while dosing still uses the saved litre volume.
+- Test result display can switch between ppm and mg/L. The calculation value is the same for pool water.
 - Daily test set: free chlorine, total chlorine, combined chlorine, and pH.
 - Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, salt for salt/mineral pools, and temperature.
 - Combined chlorine is automatically calculated as `total chlorine - free chlorine`.
 - Editable product strengths and target levels, saved in the browser for later use.
 - Hamburger menu access to calculator, targets, chemicals, history, safety/reference, and install.
 - Dose cards explain what each chemical does to the water and include short action steps for out-of-target readings.
-- Local history saves test logs and chemical addition logs, with simple trend charts.
+- Local history saves test logs with simple trend charts.
 
 ## Calculation notes
 

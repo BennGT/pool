@@ -340,9 +340,16 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.concentration-segment {
+  grid-column: span 3;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .test-segment span,
 .sanitizer-segment span,
-.unit-segment span {
+.unit-segment span,
+.concentration-segment span,
+.dimension-unit-segment span {
   justify-content: center;
   text-align: center;
 }
@@ -543,7 +550,7 @@ details summary strong {
 
 .results-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
   margin-top: 12px;
 }
@@ -607,6 +614,43 @@ details summary strong {
 
 .install-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.volume-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dimension-unit-segment {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.volume-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.volume-result strong {
+  color: var(--ink);
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.volume-result span {
+  grid-column: 1 / 2;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.volume-result button {
+  grid-column: 2 / 3;
+  grid-row: 1 / span 2;
 }
 
 .history-chart {
@@ -835,8 +879,13 @@ details summary strong {
   .pool-volume-field,
   .surface-field,
   .test-segment,
-  .unit-segment {
+  .unit-segment,
+  .concentration-segment {
     grid-column: span 6;
+  }
+
+  .volume-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -884,6 +933,7 @@ details summary strong {
   .targets-grid,
   .chemicals-grid,
   .readings-grid,
+  .volume-grid,
   .chemical-name-grid,
   .notes-grid,
   .install-grid {
@@ -895,7 +945,8 @@ details summary strong {
   .surface-field,
   .sanitizer-segment,
   .test-segment,
-  .unit-segment {
+  .unit-segment,
+  .concentration-segment {
     grid-column: 1 / -1;
   }
 
@@ -908,13 +959,17 @@ details summary strong {
   }
 
   .test-segment,
-  .unit-segment {
+  .unit-segment,
+  .concentration-segment,
+  .dimension-unit-segment {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sanitizer-segment span,
   .test-segment span,
-  .unit-segment span {
+  .unit-segment span,
+  .concentration-segment span,
+  .dimension-unit-segment span {
     min-height: 48px;
     padding-inline: 8px;
   }
@@ -945,6 +1000,16 @@ details summary strong {
   .history-item div {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .volume-result {
+    grid-template-columns: 1fr;
+  }
+
+  .volume-result span,
+  .volume-result button {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   details summary {

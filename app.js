@@ -24,6 +24,15 @@ const poolDefaults = {
     surface: "render",
     allowCya: false,
     note: "Indoor pool: cyanuric acid is hidden."
+  },
+  custom: {
+    name: "Custom Pool",
+    volume: 50000,
+    sanitizer: "chlorine",
+    surface: "render",
+    allowCya: true,
+    custom: true,
+    note: "Use the volume calculator if the pool size is unknown."
   }
 };
 
@@ -88,7 +97,8 @@ function makeDefaultProfileSettings() {
       key,
       {
         sanitizer: profile.sanitizer,
-        surface: profile.surface
+        surface: profile.surface,
+        volume: profile.volume
       }
     ])
   );
@@ -125,6 +135,13 @@ function currentPool() {
   return poolDefaults[currentPoolKey()];
 }
 
+function currentPoolVolumeLitres(key = currentPoolKey()) {
+  const profile = poolDefaults[key];
+  const savedVolume = Number(profileSettings[key]?.volume);
+  if (profile?.custom && Number.isFinite(savedVolume) && savedVolume > 0) return savedVolume;
+  return profile?.volume || 0;
+}
+
 function activePoolAllowsCya() {
   return Boolean(currentPool().allowCya && selected("sanitizer") !== "bromine");
 }
@@ -142,6 +159,14 @@ function currentUnitSystem() {
   return selected("unitSystem");
 }
 
+function concentrationUnitLabel() {
+  return selected("concentrationUnit") === "mgL" ? "mg/L" : "ppm";
+}
+
+function concentrationUnitSuffix() {
+  return ` ${concentrationUnitLabel()}`;
+}
+
 function litresToGallons(litres) {
   return litres / 3.785411784;
 }
@@ -154,9 +179,92 @@ function formatPoolVolume(litres) {
   return `${formatNumber(litres, 0)} L`;
 }
 
+function dimensionUnitLabel() {
+  return selected("dimensionUnit") === "feet" ? "ft" : "m";
+}
+
+function dimensionToMetres(value) {
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return selected("dimensionUnit") === "feet" ? value * 0.3048 : value;
+}
+
+function calculatedVolumeLitres() {
+  const shape = $("volumeShape").value;
+  const shallow = dimensionToMetres(numberValue("volumeShallowDepth"));
+  const deep = dimensionToMetres(numberValue("volumeDeepDepth"));
+  const averageDepth = shallow && deep ? (shallow + deep) / 2 : shallow || deep;
+
+  if (!averageDepth) return null;
+
+  let area = null;
+
+  if (shape === "round") {
+    const diameter = dimensionToMetres(numberValue("volumeDiameter"));
+    if (!diameter) return null;
+    area = Math.PI * (diameter / 2) ** 2;
+  } else if (shape === "square") {
+    const side = dimensionToMetres(numberValue("volumeLength"));
+    if (!side) return null;
+    area = side ** 2;
+  } else {
+    const length = dimensionToMetres(numberValue("volumeLength"));
+    const width = dimensionToMetres(numberValue("volumeWidth"));
+    if (!length || !width) return null;
+    area = length * width * (shape === "kidney" ? 0.85 : 1);
+  }
+
+  return area * averageDepth * 1000;
+}
+
+function updateVolumeCalculator() {
+  if (!$("volumeShape")) return;
+
+  const shape = $("volumeShape").value;
+  const unit = dimensionUnitLabel();
+  const volume = calculatedVolumeLitres();
+  const result = $("volumeCalcResult");
+  const formula = $("volumeCalcFormula");
+  const useButton = $("useCalculatedVolume");
+
+  all(".volume-width-field").forEach((node) => node.classList.toggle("is-hidden", shape === "round" || shape === "square"));
+  all(".volume-diameter-field").forEach((node) => node.classList.toggle("is-hidden", shape !== "round"));
+  all(".volume-length-field").forEach((node) => node.classList.toggle("is-hidden", shape === "round"));
+  $("volumeLengthLabel").textContent = shape === "square" ? "Side length" : "Length";
+
+  if (!volume) {
+    result.textContent = "Enter dimensions";
+    formula.textContent = `Measurements are in ${unit}.`;
+    useButton.disabled = true;
+    return;
+  }
+
+  result.textContent = formatPoolVolume(volume);
+  formula.textContent = shape === "kidney"
+    ? "Kidney pools use length x width x average depth x 0.85."
+    : "Calculated from surface area x average depth.";
+  useButton.disabled = false;
+}
+
+function useCalculatedVolume() {
+  const volume = calculatedVolumeLitres();
+  if (!volume) return;
+
+  savePoolSettings(currentPoolKey());
+  profileSettings.custom = {
+    ...(profileSettings.custom || {}),
+    sanitizer: selected("sanitizer"),
+    surface: $("surfaceType").value,
+    volume
+  };
+  setValue("poolProfile", "custom");
+  applyPoolProfile("custom");
+  saveState();
+  calculate();
+  showPage("calculator");
+}
+
 function syncCombinedChlorine() {
   if (selected("sanitizer") === "bromine") {
-    $("combinedChlorineHelp").textContent = "not used for bromine";
     return null;
   }
 
@@ -167,32 +275,26 @@ function syncCombinedChlorine() {
     const rawCombined = total - free;
     const combined = Math.max(rawCombined, 0);
     const combinedDisplay = formatTruncatedDecimal(combined, 2);
-    $("combinedChlorineHelp").textContent = rawCombined < 0
-      ? `total ${formatTruncatedDecimal(total, 2)} - free ${formatTruncatedDecimal(free, 2)} = 0.00 ppm (check readings)`
-      : `total ${formatTruncatedDecimal(total, 2)} - free ${formatTruncatedDecimal(free, 2)} = ${combinedDisplay} ppm`;
     setValue("combinedChlorine", combinedDisplay);
     return combined;
   }
 
   if (free !== null || total !== null) {
     setValue("combinedChlorine", "");
-    $("combinedChlorineHelp").textContent = "enter free and total chlorine";
     return null;
   }
 
   setValue("combinedChlorine", "");
-  $("combinedChlorineHelp").textContent = "auto: total - free";
   return null;
 }
 
 function clearReadings() {
   readingIds.forEach((id) => setValue(id, ""));
   setValue("combinedChlorine", "");
-  $("combinedChlorineHelp").textContent = "auto: total - free";
 }
 
 function poolVolumeLitres() {
-  return poolDefaults[currentPoolKey()].volume;
+  return currentPoolVolumeLitres();
 }
 
 function formatNumber(value, maxDigits = 1) {
@@ -338,8 +440,10 @@ function setTargetsFromProfile() {
 
 function savePoolSettings(key = currentPoolKey()) {
   if (!poolDefaults[key]) return;
+  const existing = profileSettings[key] || {};
   const surface = $("surfaceType").value === "plaster" ? "render" : $("surfaceType").value;
   profileSettings[key] = {
+    ...existing,
     sanitizer: selected("sanitizer"),
     surface
   };
@@ -350,8 +454,9 @@ function applyPoolProfile(key = currentPoolKey()) {
     sanitizer: poolDefaults[key].sanitizer,
     surface: poolDefaults[key].surface
   };
-  setValue("poolVolume", poolDefaults[key].volume);
-  $("poolVolumeDisplay").textContent = formatPoolVolume(poolDefaults[key].volume);
+  const volume = currentPoolVolumeLitres(key);
+  setValue("poolVolume", volume);
+  $("poolVolumeDisplay").textContent = formatPoolVolume(volume);
   const surface = settings.surface === "plaster" ? "render" : settings.surface || poolDefaults[key].surface;
   setValue("surfaceType", surface);
   setRadio("sanitizer", settings.sanitizer);
@@ -367,11 +472,6 @@ function updateVisibility() {
   const isFull = testSet === "full";
   const isSalt = usesSaltReading();
   const cyaAllowed = activePoolAllowsCya();
-  const pool = currentPool();
-  const typeLabel = sanitizer === "mineral" ? "mineral chlorine" : sanitizer;
-  const targetSummary = isBromine
-    ? `${pool.name}: bromine ${formatNumber(positiveNumber("targetBromine", 4), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", 7.6), 1)}`
-    : `${pool.name}: ${typeLabel} ${formatNumber(positiveNumber("targetChlorine", 1.5), 1)} ppm, pH ${formatNumber(positiveNumber("targetPh", 7.5), 1)}`;
 
   all(".chlorine-field").forEach((node) => node.classList.toggle("is-hidden", isBromine));
   all(".bromine-field").forEach((node) => node.classList.toggle("is-hidden", !isBromine));
@@ -384,16 +484,8 @@ function updateVisibility() {
   all(".salt-field").forEach((node) => node.classList.toggle("is-hidden", !isFull || !isSalt));
   all(".target-salt").forEach((node) => node.classList.toggle("is-hidden", !isSalt));
 
-  $("poolVolumeDisplay").textContent = formatPoolVolume(pool.volume);
-  $("poolProfileNote").textContent = pool.note;
+  $("poolVolumeDisplay").textContent = formatPoolVolume(currentPoolVolumeLitres());
   $("testSetHint").textContent = testSet === "full" ? "Weekly test" : "Daily test";
-  $("targetSummary").textContent = targetSummary;
-  $("phReadingHelp").textContent = isBromine ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
-  $("targetPhHelp").textContent = isBromine ? "Vic bromine range 7.2-8.0" : "Vic chlorine range 7.2-7.8";
-  $("targetChlorineHelp").textContent = cyaAllowed || isSalt ? "Vic min 2.0 ppm where CYA is used" : "Vic min 1.0 ppm without CYA";
-  $("targetCyaHelp").textContent = cyaAllowed ? "Vic outdoor max 100 ppm; ideal 30 ppm or less" : "Indoor pools do not use CYA";
-  $("targetSalt").nextElementSibling.textContent = sanitizer === "mineral" ? "Set to mineral system manual" : "Set to chlorinator manual";
-  $("chemicalSummary").textContent = `${formatNumber(positiveNumber("muriaticStrength", 31.45), 1)}% hydrochloric acid, ${formatNumber(positiveNumber("calciumPurity", 77), 1)}% calcium chloride`;
 }
 
 function saveState() {
@@ -402,6 +494,7 @@ function saveState() {
     activePool: currentPoolKey(),
     testSet: selected("testSet"),
     unitSystem: currentUnitSystem(),
+    concentrationUnit: selected("concentrationUnit"),
     profileSettings,
     values: {}
   };
@@ -433,6 +526,7 @@ function loadState() {
     setValue("poolProfile", state.activePool || "chiller");
     if (state.testSet) setRadio("testSet", state.testSet);
     if (state.unitSystem) setRadio("unitSystem", state.unitSystem);
+    if (state.concentrationUnit) setRadio("concentrationUnit", state.concentrationUnit);
     applyPoolProfile(currentPoolKey());
 
     Object.entries(state.values || {}).forEach(([id, value]) => {
@@ -462,7 +556,6 @@ function calculate() {
   syncCombinedChlorine();
 
   const volume = poolVolumeLitres();
-  $("volumeReadout").textContent = `${formatPoolVolume(volume)} - ${currentPool().name}`;
 
   if (!volume || volume <= 0 || !hasAnyReading()) {
     lastCards = [];
@@ -517,6 +610,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   const combinedLevel = combined === null ? null : truncateToDecimals(combined, 2);
   const target = positiveNumber("targetChlorine", currentDefaultTargets().chlorine);
   const combinedAction = positiveNumber("targetCombined", 1);
+  const unit = concentrationUnitSuffix();
 
   if (free !== null) {
     if (free < target - 0.1) {
@@ -528,7 +622,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
         badge: "dose",
         amount: formatVolume(liquidMl),
         chemical: `${formatNumber(liquidStrength, 1)}% liquid chlorine`,
-        body: `Raises free chlorine by about ${formatNumber(delta, 1)} ppm to ${formatNumber(target, 1)} ppm.`,
+        body: `Raises free chlorine by about ${formatNumber(delta, 1)}${unit} to ${formatNumber(target, 1)}${unit}.`,
         effect: "Raises the active sanitiser residual. Liquid chlorine can also slowly add salt and nudge pH upward.",
         steps: [
           `Add ${formatVolume(liquidMl)} with the pump running.`,
@@ -543,7 +637,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
         badge: "watch",
         amount: "Hold",
         chemical: "chlorine dosing",
-        body: `Current free chlorine is ${formatNumber(free, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm before adding more.`,
+        body: `Current free chlorine is ${formatNumber(free, 1)}${unit}. Let it drift down toward ${formatNumber(target, 1)}${unit} before adding more.`,
         effect: "Holding chlorine dosing lets the sanitiser residual reduce through normal demand, sunlight and circulation.",
         steps: [
           "Do not add more chlorine now.",
@@ -560,7 +654,7 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
       badge: "stop",
       amount: "Hold",
       chemical: "chlorine dosing",
-      body: `Victorian guidance lists total chlorine max 10 ppm. Current total chlorine is ${formatNumber(total, 1)} ppm.`,
+      body: `Victorian guidance lists total chlorine max 10${unit}. Current total chlorine is ${formatNumber(total, 1)}${unit}.`,
       effect: "Do not add more chlorinating product while total chlorine is above the operating limit.",
       steps: [
         "Stop chlorine additions and keep the water circulating.",
@@ -583,18 +677,18 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
       badge: "stop",
       amount: breakpointDelta > 0 ? liquidDose : "Retest",
       chemical: breakpointDelta > 0 ? `${formatNumber(liquidStrength, 1)}% liquid chlorine` : "combined chlorine",
-      body: `Combined chlorine is ${formatTruncatedDecimal(combinedLevel, 2)} ppm. Breakpoint target is about ${formatTruncatedDecimal(breakpointTarget, 2)} ppm free chlorine.`,
+      body: `Combined chlorine is ${formatTruncatedDecimal(combinedLevel, 2)}${unit}. Breakpoint target is about ${formatTruncatedDecimal(breakpointTarget, 2)}${unit} free chlorine.`,
       effect: "Combined chlorine is used-up chlorine. It is usually high after bather load, organics, low oxidation, or poor indoor ventilation.",
       steps: breakpointDelta > 0
         ? [
             `Add ${liquidDose} liquid chlorine with the pump running.`,
             "Keep bathers out, circulate and ventilate, then retest free, total and combined chlorine.",
-            `Goal: combined chlorine back under ${formatTruncatedDecimal(combinedAction, 2)} ppm.`
+            `Goal: combined chlorine back under ${formatTruncatedDecimal(combinedAction, 2)}${unit}.`
           ]
         : [
             "Free chlorine is already near the breakpoint level.",
             "Keep bathers out, circulate and ventilate, then retest free, total and combined chlorine.",
-            `Goal: combined chlorine back under ${formatTruncatedDecimal(combinedAction, 2)} ppm.`
+            `Goal: combined chlorine back under ${formatTruncatedDecimal(combinedAction, 2)}${unit}.`
           ],
       alt: breakpointDelta > 0
         ? [`Granular chlorine option: ${granularDose} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
@@ -604,9 +698,9 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
     cards.push({
       title: "Combined chlorine pass",
       badge: "ok",
-      amount: `${formatTruncatedDecimal(combinedLevel, 2)} ppm`,
+      amount: `${formatTruncatedDecimal(combinedLevel, 2)}${unit}`,
       chemical: "combined chlorine",
-      body: `Combined chlorine is at or under the ${formatTruncatedDecimal(combinedAction, 2)} ppm action level.`,
+      body: `Combined chlorine is at or under the ${formatTruncatedDecimal(combinedAction, 2)}${unit} action level.`,
       effect: "Pass for the entered free and total chlorine readings."
     });
   }
@@ -616,6 +710,7 @@ function calculateBromine(cards, volume) {
   const bromine = numberValue("bromine");
   const target = positiveNumber("targetBromine", 4);
   const strength = positiveNumber("bromineStrength", 61);
+  const unit = concentrationUnitSuffix();
 
   if (bromine === null) return;
 
@@ -627,7 +722,7 @@ function calculateBromine(cards, volume) {
       badge: "dose",
       amount: formatMass(grams),
       chemical: `${formatNumber(strength, 1)}% bromine granules`,
-      body: `Raises total bromine by about ${formatNumber(delta, 1)} ppm to ${formatNumber(target, 1)} ppm.`,
+      body: `Raises total bromine by about ${formatNumber(delta, 1)}${unit} to ${formatNumber(target, 1)}${unit}.`,
       effect: "Raises the bromine sanitiser residual so the water can keep disinfecting between bather loads.",
       steps: [
         `Add ${formatMass(grams)} with the pump running.`,
@@ -641,7 +736,7 @@ function calculateBromine(cards, volume) {
       badge: "watch",
       amount: "Hold",
       chemical: "bromine dosing",
-      body: `Current bromine is ${formatNumber(bromine, 1)} ppm. Let it drift down toward ${formatNumber(target, 1)} ppm.`,
+      body: `Current bromine is ${formatNumber(bromine, 1)}${unit}. Let it drift down toward ${formatNumber(target, 1)}${unit}.`,
       effect: "Holding bromine dosing lets the residual reduce through normal demand and dilution.",
       steps: [
         "Do not add more bromine now.",
@@ -699,6 +794,7 @@ function calculatePh(cards, volume, alkalinity, hydrochloricStrength) {
 function calculateAlkalinity(cards, volume, hydrochloricStrength) {
   const current = numberValue("alkalinity");
   const target = positiveNumber("targetAlkalinity", 100);
+  const unit = concentrationUnitSuffix();
 
   if (current === null) return;
 
@@ -709,7 +805,7 @@ function calculateAlkalinity(cards, volume, hydrochloricStrength) {
       badge: "dose",
       amount: formatMass(bicarbForAlkalinity(volume, delta)),
       chemical: "sodium bicarbonate",
-      body: `Raises total alkalinity by about ${formatNumber(delta, 0)} ppm.`,
+      body: `Raises total alkalinity by about ${formatNumber(delta, 0)}${unit}.`,
       effect: "Increases alkalinity, which buffers pH and makes pH changes less sudden.",
       steps: [
         `Add ${formatMass(bicarbForAlkalinity(volume, delta))} sodium bicarbonate with circulation.`,
@@ -742,6 +838,7 @@ function calculateCalcium(cards, volume) {
   const current = numberValue("calcium");
   const target = positiveNumber("targetCalcium", 250);
   const purity = positiveNumber("calciumPurity", 77);
+  const unit = concentrationUnitSuffix();
 
   if (current === null) return;
 
@@ -752,7 +849,7 @@ function calculateCalcium(cards, volume) {
       badge: "dose",
       amount: formatMass(calciumChlorideForHardness(volume, delta, purity)),
       chemical: `${formatNumber(purity, 1)}% calcium chloride`,
-      body: `Raises calcium hardness by about ${formatNumber(delta, 0)} ppm.`,
+      body: `Raises calcium hardness by about ${formatNumber(delta, 0)}${unit}.`,
       effect: "Increases calcium hardness, which helps protect concrete surfaces and tile grout from aggressive water.",
       steps: [
         `Add ${formatMass(calciumChlorideForHardness(volume, delta, purity))} calcium chloride slowly.`,
@@ -784,6 +881,7 @@ function calculateCya(cards, volume, sanitizer) {
 
   const target = positiveNumber("targetCya", 30);
   const purity = positiveNumber("stabilizerPurity", 100);
+  const unit = concentrationUnitSuffix();
 
   if (current < target - 5) {
     const delta = target - current;
@@ -792,7 +890,7 @@ function calculateCya(cards, volume, sanitizer) {
       badge: "dose",
       amount: formatMass(stabilizerDose(volume, delta, purity)),
       chemical: `${formatNumber(purity, 1)}% stabiliser`,
-      body: `Raises cyanuric acid by about ${formatNumber(delta, 0)} ppm.`,
+      body: `Raises cyanuric acid by about ${formatNumber(delta, 0)}${unit}.`,
       effect: "Increases stabiliser, which protects chlorine from sunlight but makes high chlorine levels less effective.",
       steps: [
         `Add ${formatMass(stabilizerDose(volume, delta, purity))} stabiliser slowly.`,
@@ -824,6 +922,7 @@ function calculateSalt(cards, volume, sanitizer) {
 
   const target = positiveNumber("targetSalt", 4000);
   const systemName = sanitizer === "mineral" ? "mineral system" : "salt chlorinator";
+  const unit = concentrationUnitSuffix();
 
   if (current < target - 100) {
     const delta = target - current;
@@ -832,7 +931,7 @@ function calculateSalt(cards, volume, sanitizer) {
       badge: "dose",
       amount: formatMass(saltDose(volume, delta)),
       chemical: "pool salt",
-      body: `Raises salt by about ${formatNumber(delta, 0)} ppm. Match the ${systemName} manual when it differs from this target.`,
+      body: `Raises salt by about ${formatNumber(delta, 0)}${unit}. Match the ${systemName} manual when it differs from this target.`,
       effect: `Increases salinity so the ${systemName} can operate correctly.`,
       steps: [
         `Add ${formatMass(saltDose(volume, delta))} salt across the pool surface.`,
@@ -863,10 +962,6 @@ function renderCards(cards) {
   results.replaceChildren();
 
   if (!cards.length) {
-    const empty = document.createElement("article");
-    empty.className = "empty-state";
-    empty.innerHTML = "<strong>Enter readings</strong><span>Doses appear as soon as there is enough data.</span>";
-    results.append(empty);
     return;
   }
 
@@ -946,16 +1041,19 @@ const readingLabels = {
 
 const readingUnits = {
   ph: "",
-  waterTemperature: " degrees C",
-  freeChlorine: " ppm",
-  totalChlorine: " ppm",
-  combinedChlorine: " ppm",
-  bromine: " ppm",
-  alkalinity: " ppm",
-  calcium: " ppm",
-  cya: " ppm",
-  salt: " ppm"
+  waterTemperature: " degrees C"
 };
+
+const concentrationReadingIds = new Set([
+  "freeChlorine",
+  "totalChlorine",
+  "combinedChlorine",
+  "bromine",
+  "alkalinity",
+  "calcium",
+  "cya",
+  "salt"
+]);
 
 function loadHistory() {
   try {
@@ -1067,7 +1165,8 @@ function formatDateTime(value) {
 
 function formatReadingValue(metric, value) {
   const digits = metric === "combinedChlorine" ? 2 : metric === "ph" || metric === "waterTemperature" ? 1 : 0;
-  return `${formatTruncatedDecimal(value, digits)}${readingUnits[metric] || ""}`;
+  const unit = concentrationReadingIds.has(metric) ? concentrationUnitSuffix() : readingUnits[metric] || "";
+  return `${formatTruncatedDecimal(value, digits)}${unit}`;
 }
 
 function renderHistory() {
@@ -1245,6 +1344,7 @@ function showPage(page) {
   closeDrawer();
   if (page === "install") updateInstallState();
   if (page === "history") renderHistory();
+  if (page === "volume") updateVolumeCalculator();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1304,10 +1404,29 @@ function bindEvents() {
       saveState();
       calculate();
       renderHistory();
+      updateVolumeCalculator();
     });
   });
 
-  $("resetTargets").addEventListener("click", setTargetsFromProfile);
+  all('input[name="concentrationUnit"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      saveState();
+      calculate();
+      renderHistory();
+    });
+  });
+
+  all('input[name="dimensionUnit"]').forEach((input) => {
+    input.addEventListener("change", updateVolumeCalculator);
+  });
+
+  ["volumeShape", "volumeLength", "volumeWidth", "volumeDiameter", "volumeShallowDepth", "volumeDeepDepth"].forEach((id) => {
+    if (!$(id)) return;
+    $(id).addEventListener("input", updateVolumeCalculator);
+    $(id).addEventListener("change", updateVolumeCalculator);
+  });
+
+  $("useCalculatedVolume").addEventListener("click", useCalculatedVolume);
   $("saveTargets").addEventListener("click", () => {
     saveState();
     showPage("calculator");
@@ -1317,7 +1436,6 @@ function bindEvents() {
     showPage("calculator");
   });
   $("saveTestLog").addEventListener("click", saveTestLog);
-  $("saveAdditions").addEventListener("click", saveChemicalAdditions);
   $("historyMetric").addEventListener("change", renderHistory);
   $("clearHistory").addEventListener("click", clearHistory);
   $("installAppButton").addEventListener("click", promptInstallApp);
@@ -1366,7 +1484,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260522-no-reset", {
+    navigator.serviceWorker.register("service-worker.js?v=20260523-tidy-volume", {
       updateViaCache: "none"
     }).catch(() => {});
   });
