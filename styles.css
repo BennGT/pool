@@ -321,13 +321,9 @@ button {
   grid-column: span 2;
 }
 
-.surface-field {
-  grid-column: span 2;
-}
-
 .sanitizer-segment {
-  grid-column: span 5;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-column: span 4;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .test-segment {
@@ -335,21 +331,8 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.unit-segment {
-  grid-column: span 3;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.concentration-segment {
-  grid-column: span 3;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .test-segment span,
-.sanitizer-segment span,
-.unit-segment span,
-.concentration-segment span,
-.dimension-unit-segment span {
+.sanitizer-segment span {
   justify-content: center;
   text-align: center;
 }
@@ -612,16 +595,32 @@ details summary strong {
   line-height: 1.42;
 }
 
+.safety-grid .safety-critical {
+  grid-column: 1 / -1;
+  gap: 8px;
+  border-color: rgba(185, 28, 28, 0.34);
+  background: #fff1f2;
+  box-shadow: 0 14px 32px rgba(185, 28, 28, 0.10);
+}
+
+.safety-grid .safety-critical strong {
+  color: #7f1d1d;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.safety-grid .safety-critical span {
+  color: #7f1d1d;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
 .install-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .volume-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.dimension-unit-segment {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .volume-result {
@@ -877,10 +876,7 @@ details summary strong {
   }
 
   .pool-volume-field,
-  .surface-field,
-  .test-segment,
-  .unit-segment,
-  .concentration-segment {
+  .test-segment {
     grid-column: span 6;
   }
 
@@ -942,11 +938,8 @@ details summary strong {
 
   .pool-profile-field,
   .pool-volume-field,
-  .surface-field,
   .sanitizer-segment,
-  .test-segment,
-  .unit-segment,
-  .concentration-segment {
+  .test-segment {
     grid-column: 1 / -1;
   }
 
@@ -958,18 +951,12 @@ details summary strong {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .test-segment,
-  .unit-segment,
-  .concentration-segment,
-  .dimension-unit-segment {
+  .test-segment {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sanitizer-segment span,
-  .test-segment span,
-  .unit-segment span,
-  .concentration-segment span,
-  .dimension-unit-segment span {
+  .test-segment span {
     min-height: 48px;
     padding-inline: 8px;
   }

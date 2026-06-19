@@ -1,5 +1,5 @@
-const CACHE_NAME = "rnw-pool-dose-v10";
-const ASSET_VERSION = "20260619-ph-alkalinity";
+const CACHE_NAME = "rnw-pool-dose-v11";
+const ASSET_VERSION = "20260619-rnw-metric-safety";
 const APP_SHELL = [
   "./",
   "./index.html",

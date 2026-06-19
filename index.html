@@ -10,12 +10,12 @@
     <meta name="application-name" content="RNW Pools">
     <meta name="description" content="Rock N Water Landscapes pool chemical dose calculator.">
     <title>Pool Dose Calculator</title>
-    <link rel="manifest" href="manifest.webmanifest?v=20260619-ph-alkalinity">
+    <link rel="manifest" href="manifest.webmanifest?v=20260619-rnw-metric-safety">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/app-icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=20260619-ph-alkalinity">
-    <script defer src="app.js?v=20260619-ph-alkalinity"></script>
+    <link rel="stylesheet" href="styles.css?v=20260619-rnw-metric-safety">
+    <script defer src="app.js?v=20260619-rnw-metric-safety"></script>
   </head>
   <body>
     <header class="topbar">
@@ -74,20 +74,12 @@
                   <input id="poolVolume" type="hidden" value="7500">
                 </label>
 
-                <label class="field surface-field">
-                  <span>Surface</span>
-                  <select id="surfaceType">
-                    <option value="render">Render</option>
-                    <option value="fibreglass">Fibreglass</option>
-                    <option value="vinyl">Vinyl</option>
-                  </select>
-                </label>
+                <input id="surfaceType" type="hidden" value="concrete">
 
                 <fieldset class="segmented sanitizer-segment" aria-label="Pool type">
                   <legend>Pool type</legend>
                   <label><input type="radio" name="sanitizer" value="chlorine" checked><span>Chlorine</span></label>
                   <label><input type="radio" name="sanitizer" value="salt"><span>Salt</span></label>
-                  <label><input type="radio" name="sanitizer" value="mineral"><span>Mineral</span></label>
                   <label><input type="radio" name="sanitizer" value="bromine"><span>Bromine</span></label>
                 </fieldset>
 
@@ -96,17 +88,6 @@
                   <label><input type="radio" name="testSet" value="full"><span>Weekly</span></label>
                 </fieldset>
 
-                <fieldset class="segmented unit-segment" aria-label="Pool volume units">
-                  <legend>Units</legend>
-                  <label><input type="radio" name="unitSystem" value="litres" checked><span>Litres</span></label>
-                  <label><input type="radio" name="unitSystem" value="gallons"><span>Gallons</span></label>
-                </fieldset>
-
-                <fieldset class="segmented concentration-segment" aria-label="Test result units">
-                  <legend>Test unit</legend>
-                  <label><input type="radio" name="concentrationUnit" value="ppm" checked><span>ppm</span></label>
-                  <label><input type="radio" name="concentrationUnit" value="mgL"><span>mg/L</span></label>
-                </fieldset>
               </div>
             </section>
 
@@ -193,29 +174,23 @@
             </div>
 
             <div class="form-grid volume-grid">
-              <fieldset class="segmented dimension-unit-segment" aria-label="Measurement units">
-                <legend>Measurements</legend>
-                <label><input type="radio" name="dimensionUnit" value="metres" checked><span>Metres</span></label>
-                <label><input type="radio" name="dimensionUnit" value="feet"><span>Feet</span></label>
-              </fieldset>
-
               <label class="field">
-                <span>Length</span>
+                <span>Length (m)</span>
                 <input id="volumeLength" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
 
               <label class="field">
-                <span>Width</span>
+                <span>Width (m)</span>
                 <input id="volumeWidth" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
 
               <label class="field">
-                <span>Shallow depth</span>
+                <span>Shallow depth (m)</span>
                 <input id="volumeShallowDepth" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
 
               <label class="field">
-                <span>Deep depth</span>
+                <span>Deep depth (m)</span>
                 <input id="volumeDeepDepth" type="number" min="0" step="0.01" inputmode="decimal">
               </label>
             </div>
@@ -380,6 +355,10 @@
             </div>
 
             <div class="notes-grid safety-grid">
+              <article class="safety-critical">
+                <strong>Always turn off pool heater and UV sanitiser</strong>
+                <span>Leave the pool pump running when adding chemicals and salt. This keeps water moving so products dilute quickly, helps stop concentrated chemical water passing through heaters or UV equipment, and prevents salt sitting on the pool surface.</span>
+              </article>
               <article>
                 <strong>Do not mix chemicals</strong>
                 <span>Add products separately and keep them in their own containers.</span>

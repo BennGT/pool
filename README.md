@@ -10,14 +10,14 @@ The app also includes an Install App menu tab with platform-specific install pro
 
 ## What it handles
 
-- Pool types: chlorine, salt, mineral, and bromine.
+- Pool types: chlorine, salt, and bromine.
 - Pool profiles: Chiller 7,500 L, Indoor Plunge 4,500 L, Indoor Swimming Pool 150,000 L, and a Custom Pool option.
 - Volume calculator for length, width, and average depth.
-- Surface selector: render, fibreglass, or vinyl.
-- Pool volume display can switch between litres and gallons while dosing still uses the saved litre volume.
-- Test result display can switch between ppm and mg/L. The calculation value is the same for pool water.
+- Pool surface is fixed internally as concrete for RNW dosing.
+- Pool volume and volume calculator use metric litres and metres.
+- Test result display uses ppm.
 - Daily test set: free chlorine, total chlorine, combined chlorine, and pH.
-- Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, salt for salt/mineral pools, and temperature.
+- Weekly test set: adds total alkalinity, calcium hardness, stabiliser/CYA where used, salt for salt pools, and temperature.
 - Combined chlorine is automatically calculated as `total chlorine - free chlorine`.
 - Editable product strengths and target levels, saved in the browser for later use.
 - Hamburger menu access to calculator, targets, chemicals, history, safety/reference, and install.
@@ -28,7 +28,7 @@ The app also includes an Install App menu tab with platform-specific install pro
 
 The app uses local formulas rather than an external dosing API. Chlorine, bromine, CYA, hardness, and salt doses are mostly ppm mass-balance calculations:
 
-- `1 ppm = 1 mg/L`.
+- Test readings are entered and displayed in ppm.
 - Liquid chlorine assumes percent available chlorine as grams per 100 mL.
 - Granular chlorine and bromine assume percent available sanitizer by weight.
 - Salt, CYA, calcium chloride, and sodium bicarbonate doses scale from ppm rise and pool volume.

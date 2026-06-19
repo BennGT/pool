@@ -5,7 +5,7 @@ const poolDefaults = {
     name: "Chiller",
     volume: 7500,
     sanitizer: "chlorine",
-    surface: "render",
+    surface: "concrete",
     allowCya: true,
     note: "Stabiliser can be used if this pool is operated outdoors."
   },
@@ -13,7 +13,7 @@ const poolDefaults = {
     name: "Indoor Plunge",
     volume: 4500,
     sanitizer: "chlorine",
-    surface: "render",
+    surface: "concrete",
     allowCya: false,
     note: "Indoor pool: cyanuric acid is hidden."
   },
@@ -21,7 +21,7 @@ const poolDefaults = {
     name: "Indoor Swimming Pool",
     volume: 150000,
     sanitizer: "chlorine",
-    surface: "render",
+    surface: "concrete",
     allowCya: false,
     note: "Indoor pool: cyanuric acid is hidden."
   },
@@ -29,7 +29,7 @@ const poolDefaults = {
     name: "Custom Pool",
     volume: 50000,
     sanitizer: "chlorine",
-    surface: "render",
+    surface: "concrete",
     allowCya: true,
     custom: true,
     note: "Use the volume calculator if the pool size is unknown."
@@ -113,6 +113,10 @@ function setRadio(name, value) {
   if (input) input.checked = true;
 }
 
+function normalizedSanitizer(value) {
+  return value === "mineral" ? "salt" : value || "chlorine";
+}
+
 function numberValue(id) {
   const value = parseFloat($(id).value);
   return Number.isFinite(value) ? value : null;
@@ -151,41 +155,20 @@ function isSaltPool() {
 }
 
 function usesSaltReading() {
-  const sanitizer = selected("sanitizer");
-  return sanitizer === "salt" || sanitizer === "mineral";
-}
-
-function currentUnitSystem() {
-  return selected("unitSystem");
-}
-
-function concentrationUnitLabel() {
-  return selected("concentrationUnit") === "mgL" ? "mg/L" : "ppm";
+  return selected("sanitizer") === "salt";
 }
 
 function concentrationUnitSuffix() {
-  return ` ${concentrationUnitLabel()}`;
-}
-
-function litresToGallons(litres) {
-  return litres / 3.785411784;
+  return " ppm";
 }
 
 function formatPoolVolume(litres) {
-  if (currentUnitSystem() === "gallons") {
-    return `${formatNumber(litresToGallons(litres), 0)} gal`;
-  }
-
   return `${formatNumber(litres, 0)} L`;
-}
-
-function dimensionUnitLabel() {
-  return selected("dimensionUnit") === "feet" ? "ft" : "m";
 }
 
 function dimensionToMetres(value) {
   if (!Number.isFinite(value) || value <= 0) return null;
-  return selected("dimensionUnit") === "feet" ? value * 0.3048 : value;
+  return value;
 }
 
 function calculatedVolumeLitres() {
@@ -203,7 +186,6 @@ function calculatedVolumeLitres() {
 function updateVolumeCalculator() {
   if (!$("volumeCalcResult")) return;
 
-  const unit = dimensionUnitLabel();
   const volume = calculatedVolumeLitres();
   const result = $("volumeCalcResult");
   const formula = $("volumeCalcFormula");
@@ -211,7 +193,7 @@ function updateVolumeCalculator() {
 
   if (!volume) {
     result.textContent = "Enter dimensions";
-    formula.textContent = `Measurements are in ${unit}.`;
+    formula.textContent = "Measurements are in metres.";
     useButton.disabled = true;
     return;
   }
@@ -229,7 +211,7 @@ function useCalculatedVolume() {
   profileSettings.custom = {
     ...(profileSettings.custom || {}),
     sanitizer: selected("sanitizer"),
-    surface: $("surfaceType").value,
+    surface: "concrete",
     volume
   };
   setValue("poolProfile", "custom");
@@ -384,14 +366,14 @@ function currentDefaultTargets() {
   }
 
   return {
-    chlorine: sanitizer === "salt" || sanitizer === "mineral" || cyaAllowed ? 2 : 1.5,
+    chlorine: sanitizer === "salt" || cyaAllowed ? 2 : 1.5,
     combined: 1,
     bromine: 4,
     ph: 7.5,
     alkalinity: 100,
     calcium: 250,
     cya: cyaAllowed ? 30 : 0,
-    salt: sanitizer === "salt" || sanitizer === "mineral" ? 4000 : 0
+    salt: sanitizer === "salt" ? 4000 : 0
   };
 }
 
@@ -413,25 +395,23 @@ function setTargetsFromProfile() {
 function savePoolSettings(key = currentPoolKey()) {
   if (!poolDefaults[key]) return;
   const existing = profileSettings[key] || {};
-  const surface = $("surfaceType").value === "plaster" ? "render" : $("surfaceType").value;
   profileSettings[key] = {
     ...existing,
     sanitizer: selected("sanitizer"),
-    surface
+    surface: "concrete"
   };
 }
 
 function applyPoolProfile(key = currentPoolKey()) {
   const settings = profileSettings[key] || {
     sanitizer: poolDefaults[key].sanitizer,
-    surface: poolDefaults[key].surface
+    surface: "concrete"
   };
   const volume = currentPoolVolumeLitres(key);
   setValue("poolVolume", volume);
   $("poolVolumeDisplay").textContent = formatPoolVolume(volume);
-  const surface = settings.surface === "plaster" ? "render" : settings.surface || poolDefaults[key].surface;
-  setValue("surfaceType", surface);
-  setRadio("sanitizer", settings.sanitizer);
+  setValue("surfaceType", "concrete");
+  setRadio("sanitizer", normalizedSanitizer(settings.sanitizer));
   lastPoolKey = key;
   updateVisibility();
   setTargetsFromProfile();
@@ -465,8 +445,6 @@ function saveState() {
   const state = {
     activePool: currentPoolKey(),
     testSet: selected("testSet"),
-    unitSystem: currentUnitSystem(),
-    concentrationUnit: selected("concentrationUnit"),
     profileSettings,
     values: {}
   };
@@ -497,8 +475,6 @@ function loadState() {
 
     setValue("poolProfile", state.activePool || "chiller");
     if (state.testSet) setRadio("testSet", state.testSet);
-    if (state.unitSystem) setRadio("unitSystem", state.unitSystem);
-    if (state.concentrationUnit) setRadio("concentrationUnit", state.concentrationUnit);
     applyPoolProfile(currentPoolKey());
 
     Object.entries(state.values || {}).forEach(([id, value]) => {
@@ -951,10 +927,10 @@ function calculateCya(cards, volume, sanitizer) {
 
 function calculateSalt(cards, volume, sanitizer) {
   const current = numberValue("salt");
-  if (current === null || (sanitizer !== "salt" && sanitizer !== "mineral")) return;
+  if (current === null || sanitizer !== "salt") return;
 
   const target = positiveNumber("targetSalt", 4000);
-  const systemName = sanitizer === "mineral" ? "mineral system" : "salt chlorinator";
+  const systemName = "salt chlorinator";
   const unit = concentrationUnitSuffix();
 
   if (current < target - 100) {
@@ -1140,7 +1116,7 @@ function historyBaseEntry(kind) {
     volumeLitres: poolVolumeLitres(),
     displayedVolume: formatPoolVolume(poolVolumeLitres()),
     sanitizer: selected("sanitizer"),
-    surface: $("surfaceType").value === "plaster" ? "render" : $("surfaceType").value,
+    surface: "concrete",
     testSet: selected("testSet")
   };
 }
@@ -1431,28 +1407,6 @@ function bindEvents() {
     });
   });
 
-  all('input[name="unitSystem"]').forEach((input) => {
-    input.addEventListener("change", () => {
-      updateVisibility();
-      saveState();
-      calculate();
-      renderHistory();
-      updateVolumeCalculator();
-    });
-  });
-
-  all('input[name="concentrationUnit"]').forEach((input) => {
-    input.addEventListener("change", () => {
-      saveState();
-      calculate();
-      renderHistory();
-    });
-  });
-
-  all('input[name="dimensionUnit"]').forEach((input) => {
-    input.addEventListener("change", updateVolumeCalculator);
-  });
-
   ["volumeLength", "volumeWidth", "volumeShallowDepth", "volumeDeepDepth"].forEach((id) => {
     if (!$(id)) return;
     $(id).addEventListener("input", updateVolumeCalculator);
@@ -1517,7 +1471,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260619-ph-alkalinity", {
+    navigator.serviceWorker.register("service-worker.js?v=20260619-rnw-metric-safety", {
       updateViaCache: "none"
     }).catch(() => {});
   });
