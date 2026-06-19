@@ -31,6 +31,7 @@ The app uses local formulas rather than an external dosing API. Chlorine, bromin
 - Test readings are entered and displayed in ppm.
 - Liquid chlorine assumes percent available chlorine as grams per 100 mL.
 - Granular chlorine and bromine assume percent available sanitizer by weight.
+- Chlorine Out defaults to 985 g/kg sodium thiosulphate and uses a staged estimate of about 15 g per 10,000 L to lower free chlorine by 1 ppm.
 - Salt, CYA, calcium chloride, and sodium bicarbonate doses scale from ppm rise and pool volume.
 
 pH and alkalinity acid doses are practical approximations because real acid demand changes with alkalinity, borates, temperature, dissolved solids, and product composition. The app deliberately phrases large TA reductions as staged acid/aeration work rather than a single dump-in dose.

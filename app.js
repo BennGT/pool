@@ -60,6 +60,7 @@ const valueIds = [
   "targetSalt",
   "liquidChlorineStrength",
   "granularChlorineStrength",
+  "chlorineOutStrength",
   "muriaticStrength",
   "bromineStrength",
   "calciumPurity",
@@ -303,6 +304,11 @@ function ppmDose(volumeLitres, ppmDelta, productPercent) {
   return (ppmDelta * volumeLitres) / (10 * productPercent);
 }
 
+function chlorineOutDose(volumeLitres, ppmDelta, activeGramsPerKg) {
+  if (ppmDelta <= 0 || activeGramsPerKg <= 0) return 0;
+  return 15 * (volumeLitres / 10000) * ppmDelta * (985 / activeGramsPerKg);
+}
+
 function dryAcidForPh(volumeLitres, phDrop, alkalinity) {
   const alkFactor = clamp((alkalinity || 90) / 90, 0.75, 1.6);
   return 30 * (volumeLitres / 10000) * (phDrop / 0.1) * alkFactor;
@@ -518,12 +524,13 @@ function calculate() {
   const alkalinity = numberValue("alkalinity");
   const liquidStrength = positiveNumber("liquidChlorineStrength", 12.5);
   const granularStrength = positiveNumber("granularChlorineStrength", 65);
+  const chlorineOutStrength = positiveNumber("chlorineOutStrength", 985);
   const hydrochloricStrength = positiveNumber("muriaticStrength", 31.45);
 
   if (sanitizer === "bromine") {
     calculateBromine(cards, volume);
   } else {
-    calculateChlorine(cards, volume, liquidStrength, granularStrength);
+    calculateChlorine(cards, volume, liquidStrength, granularStrength, chlorineOutStrength);
   }
 
   calculatePh(cards, volume, alkalinity, hydrochloricStrength);
@@ -551,13 +558,14 @@ function calculate() {
   saveState();
 }
 
-function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
+function calculateChlorine(cards, volume, liquidStrength, granularStrength, chlorineOutStrength) {
   const free = numberValue("freeChlorine");
   const total = numberValue("totalChlorine");
   const combined = syncCombinedChlorine();
   const combinedLevel = combined === null ? null : truncateToDecimals(combined, 2);
   const target = positiveNumber("targetChlorine", currentDefaultTargets().chlorine);
   const combinedAction = positiveNumber("targetCombined", 1);
+  const chlorineOutTarget = 5;
   const unit = concentrationUnitSuffix();
 
   if (free !== null) {
@@ -578,6 +586,27 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
           "Low chlorine is usually from bather load, sunlight, or organic demand."
         ],
         alt: [`Alternative: ${formatMass(granularGrams)} of ${formatNumber(granularStrength, 1)}% granular chlorine.`]
+      });
+    } else if (free > chlorineOutTarget) {
+      const delta = free - chlorineOutTarget;
+      const dose = chlorineOutDose(volume, delta, chlorineOutStrength);
+      const halfDose = dose / 2;
+      cards.push({
+        title: "Free chlorine above 5 ppm",
+        badge: "dose",
+        amount: formatMass(dose),
+        chemical: "Chlorine Out",
+        body: `Lowers free chlorine from about ${formatNumber(free, 1)}${unit} toward ${formatNumber(chlorineOutTarget, 1)}${unit}. Dose in stages and retest before adding the full amount.`,
+        effect: "Chlorine Out is sodium thiosulphate. It neutralises chlorine quickly, lowering the sanitiser residual. Too much can drop chlorine too far and leave the pool with chlorine demand.",
+        steps: [
+          "Keep bathers out. Stop chlorine dosing or reduce the salt chlorinator output.",
+          "Turn off pool heater and UV sanitiser. Leave the pool pump running.",
+          `Pre-dissolve about half first: ${formatMass(halfDose)} Chlorine Out in a clean bucket of pool water.`,
+          "Broadcast slowly around the pool with circulation running. Do not mix with other chemicals.",
+          "Circulate 30-60 minutes, then retest free and total chlorine.",
+          `Only add the remaining amount if free chlorine is still above ${formatNumber(chlorineOutTarget, 1)}${unit}.`
+        ],
+        alt: [`Dose basis: about 15 g per 10,000 L lowers free chlorine by 1 ppm for ${formatNumber(chlorineOutStrength, 0)} g/kg sodium thiosulphate.`]
       });
     } else if (free > target + 1.5) {
       cards.push({
@@ -613,6 +642,23 @@ function calculateChlorine(cards, volume, liquidStrength, granularStrength) {
   }
 
   if (combinedLevel !== null && combinedLevel > combinedAction) {
+    if (free !== null && free > chlorineOutTarget) {
+      cards.push({
+        title: "Combined chlorine over limit",
+        badge: "stop",
+        amount: "Review",
+        chemical: "combined chlorine",
+        body: `Combined chlorine is ${formatTruncatedDecimal(combinedLevel, 2)}${unit}, but free chlorine is already above ${formatNumber(chlorineOutTarget, 1)}${unit}. Do not add more chlorine until free chlorine is back under control.`,
+        effect: "Combined chlorine is used-up chlorine. Chlorine Out reduces chlorine residual; it does not remove the bather load, organics, or ventilation issue that caused combined chlorine.",
+        steps: [
+          "Keep bathers out, keep circulation running, and ventilate indoor spaces.",
+          "Use the Chlorine Out card only if lowering free chlorine is authorised.",
+          "Retest free, total and combined chlorine before adding any more sanitiser."
+        ]
+      });
+      return;
+    }
+
     const breakpointTarget = combinedLevel * 10;
     const currentFree = free === null ? 0 : free;
     const breakpointDelta = Math.max(breakpointTarget - currentFree, 0);
@@ -1471,7 +1517,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260619-rnw-metric-safety", {
+    navigator.serviceWorker.register("service-worker.js?v=20260619-rnw-chlorine-out", {
       updateViaCache: "none"
     }).catch(() => {});
   });
