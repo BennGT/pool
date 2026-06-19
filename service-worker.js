@@ -1,5 +1,5 @@
-const CACHE_NAME = "rnw-pool-dose-v12";
-const ASSET_VERSION = "20260619-rnw-chlorine-out";
+const CACHE_NAME = "rnw-pool-dose-v13";
+const ASSET_VERSION = "20260619-rnw-calculate-button";
 const APP_SHELL = [
   "./",
   "./index.html",

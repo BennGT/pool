@@ -87,6 +87,7 @@ let lastPoolKey = "chiller";
 let drawerTouchStartX = null;
 let deferredInstallPrompt = null;
 let lastCards = [];
+let resultsVisible = false;
 let historyEntries = [];
 
 const $ = (id) => document.getElementById(id);
@@ -218,7 +219,7 @@ function useCalculatedVolume() {
   setValue("poolProfile", "custom");
   applyPoolProfile("custom");
   saveState();
-  calculate();
+  markResultsPending("Volume updated. Press Calculate to show dosing.");
   showPage("calculator");
 }
 
@@ -394,8 +395,7 @@ function setTargetsFromProfile() {
   setValue("targetCya", targets.cya);
   setValue("targetSalt", targets.salt);
   updateVisibility();
-  saveState();
-  calculate();
+  markResultsPending("Targets updated. Press Calculate to show dosing.");
 }
 
 function savePoolSettings(key = currentPoolKey()) {
@@ -468,7 +468,7 @@ function loadState() {
   if (!raw) {
     setValue("poolProfile", "chiller");
     applyPoolProfile("chiller");
-    calculate();
+    markResultsPending("Enter readings, then press Calculate.");
     return;
   }
 
@@ -498,7 +498,7 @@ function loadState() {
   }
 
   updateVisibility();
-  calculate();
+  markResultsPending("Enter readings, then press Calculate.");
 }
 
 function hasAnyReading() {
@@ -513,7 +513,8 @@ function calculate() {
 
   if (!volume || volume <= 0 || !hasAnyReading()) {
     lastCards = [];
-    renderCards([]);
+    resultsVisible = false;
+    renderPendingResults("Enter readings, then press Calculate.");
     saveState();
     return;
   }
@@ -554,6 +555,7 @@ function calculate() {
   }
 
   lastCards = cards;
+  resultsVisible = true;
   renderCards(cards);
   saveState();
 }
@@ -1012,11 +1014,37 @@ function calculateSalt(cards, volume, sanitizer) {
   }
 }
 
+function renderPendingResults(message) {
+  const results = $("results");
+  if (!results) return;
+
+  results.replaceChildren();
+  const article = document.createElement("article");
+  article.className = "empty-state";
+  const title = document.createElement("strong");
+  title.textContent = "Press Calculate";
+  const body = document.createElement("span");
+  body.textContent = message;
+  article.append(title, body);
+  results.append(article);
+  updateCalculateButton();
+}
+
+function markResultsPending(message = "Readings changed. Press Calculate to show dosing.") {
+  updateVisibility();
+  syncCombinedChlorine();
+  lastCards = [];
+  resultsVisible = false;
+  renderPendingResults(message);
+  saveState();
+}
+
 function renderCards(cards) {
   const results = $("results");
   results.replaceChildren();
 
   if (!cards.length) {
+    updateCalculateButton();
     return;
   }
 
@@ -1079,6 +1107,22 @@ function renderCards(cards) {
 
     results.append(article);
   });
+  updateCalculateButton();
+}
+
+function updateCalculateButton() {
+  const button = $("calculateButton");
+  if (!button) return;
+  button.disabled = !hasAnyReading();
+}
+
+function handleCalculatePress() {
+  if (!hasAnyReading()) {
+    markResultsPending("Enter readings, then press Calculate.");
+    return;
+  }
+
+  calculate();
 }
 
 const readingLabels = {
@@ -1420,8 +1464,8 @@ function closeDrawer() {
 function bindEvents() {
   valueIds.forEach((id) => {
     if (!$(id)) return;
-    $(id).addEventListener("input", calculate);
-    $(id).addEventListener("change", calculate);
+    $(id).addEventListener("input", () => markResultsPending());
+    $(id).addEventListener("change", () => markResultsPending());
   });
 
   $("poolProfile").addEventListener("change", () => {
@@ -1429,13 +1473,13 @@ function bindEvents() {
     applyPoolProfile(currentPoolKey());
     clearReadings();
     saveState();
-    calculate();
+    markResultsPending("Pool changed. Enter readings, then press Calculate.");
   });
 
   $("surfaceType").addEventListener("change", () => {
     savePoolSettings();
     saveState();
-    calculate();
+    markResultsPending();
   });
 
   all('input[name="sanitizer"]').forEach((input) => {
@@ -1449,7 +1493,7 @@ function bindEvents() {
     input.addEventListener("change", () => {
       updateVisibility();
       saveState();
-      calculate();
+      markResultsPending("Test set changed. Press Calculate to show dosing.");
     });
   });
 
@@ -1468,6 +1512,7 @@ function bindEvents() {
     saveState();
     showPage("calculator");
   });
+  $("calculateButton").addEventListener("click", handleCalculatePress);
   $("saveTestLog").addEventListener("click", saveTestLog);
   $("historyMetric").addEventListener("change", renderHistory);
   $("clearHistory").addEventListener("click", clearHistory);
@@ -1517,7 +1562,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260619-rnw-chlorine-out", {
+    navigator.serviceWorker.register("service-worker.js?v=20260619-rnw-calculate-button", {
       updateViaCache: "none"
     }).catch(() => {});
   });
