@@ -1,6 +1,6 @@
-# Pool Dose Calculator
+# RNW Poolz
 
-A static, local web app for converting pool test readings into practical chemical amounts.
+A static Rock N Water Landscapes pool dose calculator for converting pool test readings into practical chemical amounts.
 
 Open `index.html` in a browser. No install step is required.
 

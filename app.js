@@ -332,10 +332,6 @@ function hydrochloricForPh(volumeLitres, phDrop, alkalinity, strength) {
   return 473 * (volumeLitres / 37854) * (phDrop / 0.2) * alkFactor * (standardStrength / strength);
 }
 
-function sodiumBicarbForPh(volumeLitres, phRise) {
-  return 45 * (volumeLitres / 10000) * (phRise / 0.1);
-}
-
 function bicarbForAlkalinity(volumeLitres, ppmDelta) {
   return ppmDelta * volumeLitres * 0.00168;
 }
@@ -726,6 +722,7 @@ function calculateBromine(cards, volume) {
 function calculatePh(cards, volume, alkalinity, hydrochloricStrength) {
   const ph = numberValue("ph");
   const target = positiveNumber("targetPh", selected("sanitizer") === "bromine" ? 7.6 : 7.5);
+  const alkalinityTarget = positiveNumber("targetAlkalinity", 100);
 
   if (ph === null) return;
 
@@ -743,24 +740,61 @@ function calculatePh(cards, volume, alkalinity, hydrochloricStrength) {
       effect: "Lowers pH and also lowers total alkalinity a little.",
       steps: [
         `Add ${formatVolume(hydrochloric)} acid carefully with the pump running.`,
-        "Circulate and retest pH before adding more.",
+        "Circulate and retest pH before adding more acid.",
+        "If alkalinity is already low, use smaller staged acid doses because acid will lower it further.",
         "High pH is often from aeration, liquid chlorine, or high alkalinity."
       ],
       alt: [`Dry acid option: ${formatMass(dryAcid)}.`]
     });
   } else if (ph < target - 0.05) {
-    const rise = target - ph;
-    const sodiumBicarb = sodiumBicarbForPh(volume, rise);
+    const alkalinityIsLow = alkalinity !== null && alkalinity < alkalinityTarget - 5;
+    const alkalinityIsHigh = alkalinity !== null && alkalinity > alkalinityTarget + 15;
+
+    if (alkalinityIsLow) {
+      cards.push({
+        title: "pH is low",
+        badge: "watch",
+        amount: "Fix alkalinity first",
+        chemical: "then retest pH",
+        body: `pH is ${formatNumber(ph, 1)} and alkalinity is also low. Raise alkalinity first, because that can gently lift pH too.`,
+        effect: "Alkalinity buffers pH. Sodium bicarbonate mainly raises alkalinity and only nudges pH, so retesting avoids double dosing.",
+        steps: [
+          "Follow the alkalinity card first.",
+          "Circulate, then retest pH and alkalinity.",
+          "If pH is still low after alkalinity is back in range, aerate first or use a pH increaser in small label-dose stages."
+        ]
+      });
+      return;
+    }
+
+    if (alkalinityIsHigh) {
+      cards.push({
+        title: "pH is low",
+        badge: "watch",
+        amount: "Aerate",
+        chemical: "while lowering alkalinity",
+        body: `pH is ${formatNumber(ph, 1)} but alkalinity is high. Avoid pH-up or buffer products for now.`,
+        effect: "The alkalinity process uses acid to reduce buffering, then aeration raises pH without adding alkalinity back.",
+        steps: [
+          "Follow the lower alkalinity card in small stages.",
+          "Aerate strongly between acid stages to bring pH back up.",
+          "Retest pH and alkalinity before adding any pH increaser."
+        ]
+      });
+      return;
+    }
+
     cards.push({
       title: "Raise pH",
-      badge: "dose",
-      amount: formatMass(sodiumBicarb),
-      chemical: "sodium bicarbonate",
-      body: `Estimated slow pH lift from ${formatNumber(ph, 1)} toward ${formatNumber(target, 1)}. Retest after circulation.`,
-      effect: "Raises pH slowly and increases total alkalinity.",
+      badge: "watch",
+      amount: "Aerate first",
+      chemical: "pH increaser if needed",
+      body: `pH is ${formatNumber(ph, 1)}. Raise it toward ${formatNumber(target, 1)} without chasing alkalinity at the same time.`,
+      effect: "Aeration raises pH without adding chemicals. pH increaser/soda ash raises pH faster but can also raise alkalinity.",
       steps: [
-        `Add ${formatMass(sodiumBicarb)} sodium bicarbonate in stages.`,
-        "Circulate and retest pH and alkalinity.",
+        "Point returns upward, run water features, or increase aeration with the pump running.",
+        "Retest pH before adding a chemical pH increaser.",
+        "Avoid using sodium bicarbonate for pH-only correction unless alkalinity is also low.",
         "Low pH is often from acid overdose, rain/dilution, or low alkalinity."
       ]
     });
@@ -770,22 +804,44 @@ function calculatePh(cards, volume, alkalinity, hydrochloricStrength) {
 function calculateAlkalinity(cards, volume, hydrochloricStrength) {
   const current = numberValue("alkalinity");
   const target = positiveNumber("targetAlkalinity", 100);
+  const ph = numberValue("ph");
+  const phTarget = positiveNumber("targetPh", selected("sanitizer") === "bromine" ? 7.6 : 7.5);
   const unit = concentrationUnitSuffix();
 
   if (current === null) return;
 
   if (current < target - 5) {
     const delta = target - current;
+    const phNote = ph !== null && ph < phTarget - 0.05
+      ? " pH is also low, so retest pH after this before adding any pH increaser."
+      : "";
+    if (ph !== null && ph > phTarget + 0.05) {
+      cards.push({
+        title: "Alkalinity is low",
+        badge: "watch",
+        amount: "Stage corrections",
+        chemical: "do not add buffer yet",
+        body: `Alkalinity is ${formatNumber(current, 0)}${unit}, but pH is high. Lower pH carefully first, then retest before raising alkalinity.`,
+        effect: "Bicarbonate raises alkalinity but can push pH upward, so adding it while pH is already high can make the pH problem worse.",
+        steps: [
+          "Use the pH card first and keep the acid dose staged.",
+          "Circulate and retest pH and alkalinity.",
+          "Only add alkalinity increaser after pH is back near target."
+        ]
+      });
+      return;
+    }
     cards.push({
       title: "Raise alkalinity",
       badge: "dose",
       amount: formatMass(bicarbForAlkalinity(volume, delta)),
       chemical: "sodium bicarbonate",
-      body: `Raises total alkalinity by about ${formatNumber(delta, 0)}${unit}.`,
-      effect: "Increases alkalinity, which buffers pH and makes pH changes less sudden.",
+      body: `Raises total alkalinity by about ${formatNumber(delta, 0)}${unit}.${phNote}`,
+      effect: "Sodium bicarbonate mainly raises alkalinity and only gently moves pH. It is better for buffering than pH-only correction.",
       steps: [
         `Add ${formatMass(bicarbForAlkalinity(volume, delta))} sodium bicarbonate with circulation.`,
         "Retest alkalinity and pH after mixing.",
+        "If pH still needs raising after alkalinity is in range, use aeration first or a pH increaser in small stages.",
         "Low alkalinity makes pH unstable and is often caused by acid or dilution."
       ]
     });
@@ -799,9 +855,10 @@ function calculateAlkalinity(cards, volume, hydrochloricStrength) {
       amount: formatVolume(hydrochloric),
       chemical: "hydrochloric acid total",
       body: "Use staged acid and aeration cycles; this is not a single-dose instruction.",
-      effect: "Lowers total alkalinity and pH; aeration raises pH back up without restoring alkalinity.",
+      effect: "Acid lowers total alkalinity and pH. Aeration then raises pH back up without raising alkalinity again.",
       steps: [
-        "Add acid in smaller staged doses, then aerate to raise pH back up.",
+        "Add acid in smaller staged doses to lower alkalinity.",
+        "Aerate strongly to raise pH back up without adding buffer.",
         "Retest pH and alkalinity between stages.",
         "High alkalinity usually comes from source water, too much buffer, or pH-up products."
       ],
@@ -1460,7 +1517,7 @@ if (typeof window !== "undefined") {
 
 if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js?v=20260523-simple-volume", {
+    navigator.serviceWorker.register("service-worker.js?v=20260619-ph-alkalinity", {
       updateViaCache: "none"
     }).catch(() => {});
   });
